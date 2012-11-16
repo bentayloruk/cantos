@@ -25,6 +25,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DocumentationFile>bin\Debug\Cantos.XML</DocumentationFile>
     <Prefer32Bit>true</Prefer32Bit>
+    <StartArguments>"C:\Users\Ben Taylor\Projects\new.enticify.com\site"</StartArguments>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -44,15 +45,16 @@
   <ItemGroup>
     <Compile Include="Exception.fs" />
     <Compile Include="IO.fs" />
-    <Compile Include="Types.fs" />
+    <Compile Include="SitePath.fs" />
+    <Compile Include="Tracer.fs" />
+    <Compile Include="Cantos.fs" />
     <Compile Include="FrontMatter.fs" />
     <Compile Include="Markdown.fs" />
     <Compile Include="Input.fs" />
-    <Compile Include="Toc.fs" />
-    <Compile Include="Templates.fs" />
-    <Compile Include="Blog.fs" />
     <Compile Include="Output.fs" />
+    <Compile Include="Toc.fs" />
     <Compile Include="Jekyll.fs" />
+    <Compile Include="Enticify.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
     <Content Include="Ideas.txt" />

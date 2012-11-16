@@ -3,76 +3,69 @@
 open System
 open System.IO
 
-module App = 
+module Program =
 
-    [<EntryPoint>]
-    let main argv = 
+    type RunResult = 
+        | Success = 0
+        | Fail = 1 
 
-        let siteConfig =
-            { SiteInPath = SitePath.Create(@"C:\Users\Ben Taylor\Projects\new.enticify.com\site\", "")
-              SiteOutPath = SitePath.Create(@"C:\Users\Ben Taylor\Projects\enticify.com.cantos\", "")
-              Tracer = ConsoleTracer() }
+    //Run cantos.  MAYBE move this elsewhere.
+    let runCantos (siteConfig:SiteConfig) (inputConfig:InputConfig) (pathProcessors:list<SitePathProcessor>) = 
 
-        //List files from SiteInPath.
-        //Filter files from list.
-        //Copy files to SiteOutPath. 
-
-        //File and dir excludors. 
-        let (dirFilters:list<DirectoryInfoExclusion>) = [ (fun di -> di.Name.StartsWith("_")) ]
-        let (fileFilters:list<FileInfoExclusion>) = [ (fun fi -> fi.Name.EndsWith("~") || fi.Name.EndsWith(".swp")) ]
-
-        //Input config.
-        let inputConfig = 
-            { InputPath = siteConfig.SiteInPath
-              InputDirExclusions = dirFilters 
-              InputFileExclusions = fileFilters }
-
-        let inputs =
-            inputFileInfos inputConfig siteConfig
+        //INPUT - get the input file infos.
+        let inputFileInfos =
+            fileInfos inputConfig siteConfig
             |> Seq.toList
 
-        //Input Pass 2: Build the global context hash.
-        //Global TOCs.
-        let devToc = Toc.forPath (siteConfig.InSitePath(@"docs\commerce-server\developer\")) "DevToc"
-        let adminToc = Toc.forPath (siteConfig.InSitePath(@"docs\commerce-server\user\")) "AdminToc"
-
-        let deNumberWangToc (toc:Toc.Toc) (sitePath:SitePath) =
-            if toc.SitePath.IsSameRelativePathOrParent(sitePath) then
-                sitePath.SwitchRelative(Output.deNumberWangPath sitePath.RelativePath)
-            else sitePath 
-
-        let (pathProcessors:list<SitePathProcessor>) = 
-            [ deNumberWangToc devToc;
-              deNumberWangToc adminToc ]
-
-        //let (pathProcessors:list<SitePathProcessor>) = [ (fun sitePath -> sitePath) ]
-
-//        let templates = templateInfos(siteConfig.InSitePath(@"_templates\"))
-
-        //Output:  Prepare target folder.
+        //CLEAN OUT DIR
         let cleanDirExceptGitFolder = Dir.cleanDir (fun di -> di.Name = ".git")
         cleanDirExceptGitFolder siteConfig.SiteOutPath.AbsolutePath 
 
-        //Process markdown with no front matter.
-        inputs
+        //OUTPUT
+        //HACKED IN FOR NOW - ONLY OPERATING ON .MD FILES.
+        inputFileInfos
         |> Seq.filter (fun input -> input.FileInfo.Extension = ".md")
         |> Seq.iter (fun input ->
 
             let srcPath = input.SitePath.AbsolutePath
 
+            //Mess with output path if required.
             let destPath = 
                 let p = input.SitePath.SwitchRoot(siteConfig.SiteOutPath.AbsolutePath).ChangeExtension(".html")
-                pathProcessors |> Seq.fold (fun path proc -> proc path) p
+                if pathProcessors.Length > 0 then
+                    pathProcessors |> Seq.fold (fun path proc -> proc path) p
+                else p
 
             siteConfig.Tracer.Info(sprintf "Copying %s" input.SitePath.AbsolutePath)
             Dir.ensureDir destPath.AbsolutePath
             let md = Markdown.mdToHtml (File.readAllText srcPath)
             File.writeAllText destPath.AbsolutePath md)
 
-        //Global Posts.
-        //Global etc
+    //Entry point.
+    [<EntryPoint>]
+    let main argv = 
 
-        //Input Pass 3:  
-        //Do the copy and transforms.
+        (*
+        For now we are running the Cantos like Jekyll.
+        However, plan this being done from an fsx script (FAKE style), command line or YAML config.  One to discuss.
+        *)
 
-        0
+        let write (msg:string) = Console.WriteLine(msg)
+
+        //For now, if we have one arg, it is the path to the site source.
+        if argv.Length = 1 then
+
+            //Ensure directory arg is separator terminated (as SitePath demands it!).
+            let path = argv.[0]
+            let path = if Path.endsWithDirSeparatorChar path then path else path + Path.DirectorySeparatorChar.ToString()
+
+            //Config like Jekyll for now.
+            let siteConfig, inputConfig, pathProcessors = Jekyll.cantosConfig path 
+
+            //Run it!
+            runCantos siteConfig inputConfig pathProcessors
+            write "Cantos success"
+            0
+        else
+            write "Cantos fail"
+            1

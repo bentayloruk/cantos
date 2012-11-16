@@ -6,7 +6,7 @@
 module Path =
     open System.IO
 
-    let dirSeparatorChars = [| Path.AltDirectorySeparatorChar; Path.DirectorySeparatorChar |]
+    let dirSeparatorChars = [|  Path.DirectorySeparatorChar; Path.AltDirectorySeparatorChar|]
 
     let endsWithDirSeparatorChar (path:string) =
         dirSeparatorChars

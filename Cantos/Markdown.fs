@@ -2,7 +2,6 @@
 
 open MarkdownDeep
 
-
 ///Converts markdown to html.
 let mdToHtml markdown = 
     let md = Markdown()

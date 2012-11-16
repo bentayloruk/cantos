@@ -3,9 +3,9 @@
 open System
 open System.IO
 
-
 ///Type responsible for wrangling absolute and relative file and URLs for files in the site.
-//TODO run tests for this on MONO!
+
+//THIS CLASS NEEDS SOME TLC!
 type SitePath private (siteRootPath, siteRootRelativePath) =
 
     let absolutePath = Path.Combine(siteRootPath, siteRootRelativePath)
@@ -58,32 +58,4 @@ type SitePath private (siteRootPath, siteRootRelativePath) =
         if Path.endsWithDirSeparatorChar siteRootRelativePath then raiseInvalidOp "Path ends with directory separator char.  Probably not a file."
         let newRelative = Path.changeExtension extension siteRootRelativePath
         SitePath.Create(siteRootPath, newRelative)
-       
-        
-type ITracer =
-    abstract member Error : string -> unit
-    abstract member Info : string -> unit
-    abstract member Warning : string -> unit
-
-type ConsoleTracer() =
-    let write (msg:string) = System.Console.WriteLine(msg)
-    interface ITracer with
-        member x.Error(msg) = write msg
-        member x.Info(msg) = write msg
-        member x.Warning(msg) = write msg
-
-///Contains configuration infomation for this site.
-type SiteConfig = 
-    { SiteInPath:SitePath;
-      SiteOutPath:SitePath;
-      Tracer:ITracer; }
-    member x.InSitePath(relativePath) = SitePath.Create(x.SiteInPath.AbsolutePath, relativePath)
-
-//
-//Extension types.
-//
-type Exclusion<'a> = 'a -> bool
-type SitePathProcessor = SitePath -> SitePath
-type DirectoryInfoExclusion = Exclusion<DirectoryInfo> 
-type FileInfoExclusion = Exclusion<FileInfo> 
 

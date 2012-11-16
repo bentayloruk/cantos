@@ -31,7 +31,7 @@ module Input =
             |> Seq.exists (fun test -> test(subject))
         
     ///Creates InputFileInfo records according to the provided config.
-    let inputFileInfos inputConfig (siteConfig:SiteConfig) =
+    let fileInfos inputConfig (siteConfig:SiteConfig) =
 
         let dirFilter = combinePredicates<DirectoryInfo> inputConfig.InputDirExclusions
         let fileFilter = combinePredicates<FileInfo> inputConfig.InputFileExclusions

@@ -36,7 +36,8 @@ let [<Given>] ``I have the following post in "(.*)":`` (category:string) (postTa
     ()
 
 let [<When>] ``I run cantos`` () =
-    Jekyll.runLikeJekyll sitePath 
+    let sc, ic, pp = Jekyll.cantosConfig sitePath 
+    Program.runCantos sc ic pp
     ()
 
 let [<Then>] ``the (.*) directory should exist`` (path:string) =
