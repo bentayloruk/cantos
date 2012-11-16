@@ -73,3 +73,9 @@ module Dir =
     ///Returns all the files in path.
     let getFiles path = fs.Directory.GetFiles(path)
 
+    ///Gets all the files in directory path and all child directories of path (excluding filtered dirs).
+    let descendantFilePaths path filter = 
+        seq { yield path; yield! descendantDirs path filter }
+        |> Seq.map getFiles
+        |> Seq.concat
+

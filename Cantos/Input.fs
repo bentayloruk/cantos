@@ -29,37 +29,33 @@ module Input =
         fun (subject:'a) ->
             predicates 
             |> Seq.exists (fun test -> test(subject))
-        
+
+    //Catch and trace exceptions from front matter reading.
+    let safeReadFrontMatter (fi:FileInfo) (tracer:ITracer) =
+        try readFileFrontMatterArgs fi.FullName
+        with
+        | ex -> 
+            tracer.Error (sprintf "Error reading front matter %s.  Path: %s" ex.Message fi.FullName)
+            None
+
     ///Creates InputFileInfo records according to the provided config.
     let fileInfos inputConfig (siteConfig:SiteConfig) =
 
         let dirFilter = combinePredicates<DirectoryInfo> inputConfig.InputDirExclusions
-        let fileFilter = combinePredicates<FileInfo> inputConfig.InputFileExclusions
 
-        let inputDirs = seq {
-            yield inputConfig.InputPath.AbsolutePath;
-            yield! Dir.descendantDirs inputConfig.InputPath.AbsolutePath dirFilter }
+        let inputFileInfoFilter = 
+            let filter = combinePredicates<FileInfo> inputConfig.InputFileExclusions
+            fun fileInfo -> if filter fileInfo = true then None else Some(fileInfo)
 
         let inputFileInfos = 
-            inputDirs 
-            |> Seq.map Dir.getFiles
-            |> Seq.concat
+            let filePaths = Dir.descendantFilePaths inputConfig.InputPath.AbsolutePath dirFilter
+            filePaths
             |> Seq.map fileInfo 
-            |> Seq.choose (fun fileInfo ->
-                if fileFilter fileInfo = true then None 
-                else Some(fileInfo))
-
-        //Catch and trace exceptions from front matter reading.
-        let safeReadFrontMatter (fi:FileInfo) =
-            try readFileFrontMatterArgs fi.FullName
-            with
-            | ex -> 
-                siteConfig.Tracer.Error (sprintf "Error reading front matter %s.  Path: %s" ex.Message fi.FullName)
-                None
+            |> Seq.choose inputFileInfoFilter 
 
         let fileInfoToInputInfo (fi:FileInfo) = 
             { FileInfo = fi;
-              FrontMatter = safeReadFrontMatter fi;
+              FrontMatter = safeReadFrontMatter fi siteConfig.Tracer;
               SitePath = siteConfig.SiteInPath.RelativeSitePath(fi.FullName) }
 
         inputFileInfos |> Seq.map fileInfoToInputInfo
