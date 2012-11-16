@@ -64,8 +64,8 @@ module Program =
 
             //Run it!
             runCantos siteConfig inputConfig pathProcessors
-            write "Cantos success"
+            write (sprintf "Cantos success.  Wrote site to %s." siteConfig.SiteOutPath.AbsolutePath)
             0
         else
-            write "Cantos fail"
+            write "Cantos fail.  You must provide the site source path as the single argument."
             1
