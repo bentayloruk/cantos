@@ -2,6 +2,7 @@
 
 open System
 open System.IO
+open Markdown
 
 module Program =
 
@@ -24,22 +25,40 @@ module Program =
         //OUTPUT
         //HACKED IN FOR NOW - ONLY OPERATING ON .MD FILES.
         inputFileInfos
-        |> Seq.filter (fun input -> input.FileInfo.Extension = ".md")
         |> Seq.iter (fun input ->
 
+            //Get the in and out path.
             let srcPath = input.SitePath.AbsolutePath
-
-            //Mess with output path if required.
             let destPath = 
-                let p = input.SitePath.SwitchRoot(siteConfig.SiteOutPath.AbsolutePath).ChangeExtension(".html")
+                let p = input.SitePath.SwitchRoot(siteConfig.SiteOutPath.AbsolutePath)
                 if pathProcessors.Length > 0 then
                     pathProcessors |> Seq.fold (fun path proc -> proc path) p
                 else p
 
+            //Copy (and maybe transform).
             siteConfig.Tracer.Info(sprintf "Copying %s" input.SitePath.AbsolutePath)
             Dir.ensureDir destPath.AbsolutePath
-            let md = Markdown.mdToHtml (File.readAllText srcPath)
-            File.writeAllText destPath.AbsolutePath md)
+
+            match input.FrontMatter with 
+
+            | Some(frontMatter) -> 
+
+                match srcPath with
+
+                | MarkdownFile(path) -> 
+                    //TODO streams NOT file paths!
+                    //TODO don't write the front matter!
+                    let md = Markdown.mdToHtml (File.readAllText srcPath)
+                    let outPath = destPath.ChangeExtension(".html")
+                    File.writeAllText outPath.AbsolutePath md
+
+                | _ ->
+                    //Just copy for now...
+                    File.Copy(srcPath, destPath.AbsolutePath)
+
+            | None -> File.Copy(srcPath, destPath.AbsolutePath)
+
+        )
 
     //Entry point.
     [<EntryPoint>]
