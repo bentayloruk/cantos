@@ -1,0 +1,1 @@
+﻿- Attribute record types for front matter extraction.  Could use this to validate front matter in files.  (Debug feature).
