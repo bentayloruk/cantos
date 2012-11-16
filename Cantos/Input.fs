@@ -17,6 +17,7 @@ module Input =
         { FileInfo:FileInfo;
           SitePath:SitePath
           FrontMatter:option<FrontMatterValueList>;
+          ContentReader:unit->StreamReader;
           }
 
     //---------- Functions
@@ -36,7 +37,7 @@ module Input =
         with
         | ex -> 
             tracer.Error (sprintf "Error reading front matter %s.  Path: %s" ex.Message fi.FullName)
-            None
+            None, 0
 
     ///Creates InputFileInfo records according to the provided config.
     let fileInfos inputConfig (siteConfig:SiteConfig) =
@@ -54,8 +55,20 @@ module Input =
             |> Seq.choose inputFileInfoFilter 
 
         let fileInfoToInputInfo (fi:FileInfo) = 
+
+            let frontMatter, fmLineCount = safeReadFrontMatter fi siteConfig.Tracer
+
+            //Creates a file contents reader.  Reads and ignores all the front matter lines.
+            let fileContentReader () = 
+                let stream = File.Open(fi.FullName, FileMode.Open, FileAccess.Read)
+                let sr = new StreamReader(stream)
+                [1..fmLineCount] |> List.iter (fun _ -> sr.ReadLine() |> ignore)
+                sr
+
             { FileInfo = fi;
-              FrontMatter = safeReadFrontMatter fi siteConfig.Tracer;
-              SitePath = siteConfig.SiteInPath.RelativeSitePath(fi.FullName) }
+              FrontMatter = frontMatter;
+              SitePath = siteConfig.SiteInPath.RelativeSitePath(fi.FullName);
+              ContentReader = fileContentReader;
+              }
 
         inputFileInfos |> Seq.map fileInfoToInputInfo

@@ -14,8 +14,8 @@ module FrontMatter =
     type FrontMatterValue = | KeyValue of string * string
     type FrontMatterValueList = list<FrontMatterValue>
 
-    let FrontMatterFirstLine= "---"
-    let FrontMatterLastLine= "---"
+    let FrontMatterFirstLine = "---"
+    let FrontMatterLastLine = "---"
     let YamlDocumentEndLine = "..."
     
 
@@ -54,28 +54,27 @@ module FrontMatter =
         if reader.ReadLine() <> FrontMatterFirstLine then
             None
         else
-            let fmText = 
+            let sb = StringBuilder()
+            let append (text:string) = sb.AppendLine(text) |> ignore
 
-                let sb = StringBuilder()
-                let append (text:string) = sb.AppendLine(text) |> ignore
+            append FrontMatterFirstLine
 
-                append FrontMatterFirstLine
+            let rec readUntilFrontMatterEnds linePos =
 
-                let rec readUntilFrontMatterEnds () =
-                    match reader.ReadLine() with
-                    | line when line = FrontMatterLastLine ->
-                        append YamlDocumentEndLine//Append end of Yaml doc rather than our end of front matter --- 
-                    | null -> ()
-                    | frontMatter -> 
-                        append frontMatter 
-                        readUntilFrontMatterEnds ()
-                readUntilFrontMatterEnds ()
+                match reader.ReadLine() with
 
-                sb.ToString()
+                | line when line = FrontMatterLastLine ->
+                    //Append end of Yaml doc ... rather than our end of front matter --- 
+                    append YamlDocumentEndLine
+                    Some(sb.ToString(), linePos + 1)
 
-            if String.IsNullOrEmpty(fmText) then
-                None 
-            else yamlArgs fmText
+                | null -> None //The first line was FM but ran off end.  TODO report this? 
+
+                | frontMatter -> 
+                    append frontMatter 
+                    readUntilFrontMatterEnds (linePos + 1)
+
+            readUntilFrontMatterEnds 1 //as read the first line...
 
     ///Reads front matter from a string.
     let frontMatterArgs(text:string) =
@@ -84,9 +83,13 @@ module FrontMatter =
         
     ///Reads front matter from a file.  Returns None if no front matter and list of 0-* args if any.
     let readFileFrontMatterArgs (filePath:string) =
+
         if not <| File.Exists(filePath) then raiseArgEx "File does not exist." filePath
+
         use stream = File.Open(filePath, FileMode.Open, FileAccess.Read)
         use reader = new StreamReader(stream)
-        readFrontMatterFromReader reader
 
+        match readFrontMatterFromReader reader with
+        | None -> None, 0
+        | Some(fm, linePos) -> yamlArgs fm, linePos
 

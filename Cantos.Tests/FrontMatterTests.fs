@@ -10,6 +10,8 @@ open System.IO
 
 let textWithFrontMatter = """markdown: rdiscount
 pygments: true"""
+
+
     
 [<Fact>]
 let ``Parse Yaml OK`` () =
@@ -18,4 +20,20 @@ let ``Parse Yaml OK`` () =
         let args = yamlArgs textWithFrontMatter 
         args.IsSome && args.Value.Length = 2
         @>
-   
+
+[<Fact>]
+let ``Should report number of lines of front matter in the file`` () =
+    let sr = new StringReader("""---
+markdown: rdiscount
+pygments: true
+---
+this is
+content and
+stuff""")
+
+    test
+        <@
+        match readFrontMatterFromReader sr with
+        | None -> failwith "Should be some"
+        | Some(fm, fmLines) -> fmLines = 4
+        @>

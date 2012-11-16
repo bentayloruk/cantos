@@ -48,13 +48,15 @@ module Program =
                 | MarkdownFile(path) -> 
                     //TODO streams NOT file paths!
                     //TODO don't write the front matter!
-                    let md = Markdown.mdToHtml (File.readAllText srcPath)
+                    let markdownContent = input.ContentReader().ReadToEnd()
+                    let md = Markdown.mdToHtml markdownContent
                     let outPath = destPath.ChangeExtension(".html")
                     File.writeAllText outPath.AbsolutePath md
 
                 | _ ->
-                    //Just copy for now...
-                    File.Copy(srcPath, destPath.AbsolutePath)
+                    //Copy the contents (using the reader that skips front matter).
+                    let contents = input.ContentReader().ReadToEnd()
+                    File.writeAllText destPath.AbsolutePath contents
 
             | None -> File.Copy(srcPath, destPath.AbsolutePath)
 
