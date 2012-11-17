@@ -32,7 +32,7 @@ If this sounds like fun, get in touch.  I'd love to chat with you about design e
 
 ## Why the name Cantos?
 
-Hmmm.  I may change the name.  I'm calling it Cantos at the moment as I'm on book 4 of Dan Simmons [Hyperion Cantos](http://en.wikipedia.org/wiki/Hyperion_Cantos) and Cantos seemed more applicable than Shrike (I need a Shrike OSS project).  I'm listening to these books on Audible and they are AMAZING!
+Hmmm.  I may change the name (I quite like [morph](http://en.wikipedia.org/wiki/Morph_(character))).  I'm calling it Cantos at the moment as I'm on book 4 of Dan Simmons [Hyperion Cantos](http://en.wikipedia.org/wiki/Hyperion_Cantos) and Cantos seemed more applicable than Shrike (I need a Shrike OSS project).  I'm listening to these books on Audible and they are AMAZING!
 
 
 
