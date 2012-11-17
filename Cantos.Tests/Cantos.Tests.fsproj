@@ -50,7 +50,7 @@
     <Reference Include="System.Numerics" />
     <Reference Include="System.Xml" />
     <Reference Include="TickSpec">
-      <HintPath>..\..\tickspec\TickSpec\bin\Debug\TickSpec.dll</HintPath>
+      <HintPath>..\packages\TickSpec.1.0.0\net20\TickSpec.dll</HintPath>
     </Reference>
     <Reference Include="Unquote">
       <HintPath>..\packages\Unquote.2.2.2\lib\net40\Unquote.dll</HintPath>
