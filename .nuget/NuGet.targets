@@ -84,7 +84,7 @@
     <Target Name="RestorePackages" DependsOnTargets="CheckPrerequisites">
         <Exec Command="$(RestoreCommand)"
               Condition="'$(OS)' != 'Windows_NT' And Exists('$(PackagesConfig)')" />
-        d     
+
         <Exec Command="$(RestoreCommand)"
               LogStandardErrorAsError="true"
               Condition="'$(OS)' == 'Windows_NT' And Exists('$(PackagesConfig)')" />
