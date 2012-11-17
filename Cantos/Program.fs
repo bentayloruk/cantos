@@ -47,7 +47,6 @@ module Program =
 
                 | MarkdownFile(path) -> 
                     //TODO streams NOT file paths!
-                    //TODO don't write the front matter!
                     let markdownContent = input.ContentReader().ReadToEnd()
                     let md = Markdown.mdToHtml markdownContent
                     let outPath = destPath.ChangeExtension(".html")
@@ -77,8 +76,10 @@ module Program =
         if argv.Length = 1 then
 
             //Ensure directory arg is separator terminated (as SitePath demands it!).
+            //TODO review this path stuff.  Hacked in for sample site relative path.
             let path = argv.[0]
             let path = if Path.endsWithDirSeparatorChar path then path else path + Path.DirectorySeparatorChar.ToString()
+            let path = Path.GetFullPath(path)
 
             //Config like Jekyll for now.
             let siteConfig, inputConfig, pathProcessors = Jekyll.cantosConfig path 

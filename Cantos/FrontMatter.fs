@@ -30,23 +30,18 @@ module FrontMatter =
 
         let docs = yamlDocs yamlDoc
         
-        if docs.Count > 1 then raiseNotImpl "We only support one front matter yaml document."
+        if docs.Count <> 1 then raiseNotImpl "We only support one front matter yaml document."
 
-        if docs.Count = 0 then
-            None
-        else
-            match docs.[0].RootNode with 
-            | null -> None
-            | :? YamlMappingNode as mappingNode -> 
-                let vars = [
-                    for child in mappingNode.Children do
-                        match child.Key, child.Value with
-                        | (:? YamlScalarNode as key), (:? YamlScalarNode as value) -> 
-                            yield FrontMatterValue.KeyValue(key.ToString(), value.ToString())
-                        | (_, _) -> raiseNotImpl "We only have support for simple Yaml key value pairs (YamlScalarNode to YamlScalarNode) at the moment." 
-                        ]
-                Some(vars)
-            | _ -> None //Some other type of YamlNode... 
+        match docs.[0].RootNode with 
+        | null -> [] 
+        | :? YamlMappingNode as mappingNode -> 
+            [ for child in mappingNode.Children do
+                match child.Key, child.Value with
+                | (:? YamlScalarNode as key), (:? YamlScalarNode as value) -> 
+                    yield FrontMatterValue.KeyValue(key.ToString(), value.ToString())
+                | (_, _) -> raiseNotImpl "We only have support for simple Yaml key value pairs (YamlScalarNode to YamlScalarNode) at the moment." 
+            ]
+        | _ -> [] //Some other type of YamlNode... 
 
     ///Reads the front matter from a reader.
     let readFrontMatterFromReader (reader:#TextReader) =
@@ -91,5 +86,7 @@ module FrontMatter =
 
         match readFrontMatterFromReader reader with
         | None -> None, 0
-        | Some(fm, linePos) -> yamlArgs fm, linePos
+        | Some(fm, linePos) ->
+            let values = yamlArgs fm
+            Some(values), linePos
 
