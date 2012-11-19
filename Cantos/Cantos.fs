@@ -24,4 +24,6 @@ type FileInfoExclusion = Exclusion<FileInfo>
 //Path processors.  Used to manipulate output SitePaths.
 type SitePathProcessor = SitePath -> SitePath
 
+type Port = int
+type PreviewHttpServer = SitePath -> Port -> unit
 

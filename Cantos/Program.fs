@@ -10,6 +10,11 @@ module Program =
         | Success = 0
         | Fail = 1 
 
+
+    //Preview server function.
+    let runPreviewServer (websitePath:SitePath) (port: Port) =
+        Nancy.runPreviewServer websitePath.AbsolutePath port
+
     //Run cantos.  MAYBE move this elsewhere.
     let runCantos (siteConfig:SiteConfig) (inputConfig:InputConfig) (pathProcessors:list<SitePathProcessor>) = 
 
@@ -61,6 +66,7 @@ module Program =
 
         )
 
+
     //Entry point.
     [<EntryPoint>]
     let main argv = 
@@ -87,6 +93,11 @@ module Program =
             //Run it!
             runCantos siteConfig inputConfig pathProcessors
             write (sprintf "Cantos success.  Wrote site to %s." siteConfig.SiteOutPath.AbsolutePath)
+
+            //Preview it!
+            runPreviewServer siteConfig.SiteOutPath 8888
+            let _ = Console.ReadLine()
+
             0
         else
             write "Cantos fail.  You must provide the site source path as the single argument."
