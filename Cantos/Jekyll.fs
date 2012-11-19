@@ -4,12 +4,10 @@
 Wires up Cantos to run sorta like Jekyll maybe ;)
 *)
 
-open System.IO
-
 let cantosConfig (inPath:string) =
 
     let siteOutPath =
-        let path = @"_site" + Path.DirectorySeparatorChar.ToString()
+        let path = @"_site" + Path.dirSeparator
         let path = Path.combine [| inPath; path |]
         SitePath.Create(path, "")
 

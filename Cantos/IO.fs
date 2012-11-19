@@ -8,6 +8,9 @@ module Path =
 
     let dirSeparatorChars = [|  Path.DirectorySeparatorChar; Path.AltDirectorySeparatorChar|]
 
+    ///The Path.DirectorySeparatorChar as a string (x-plat).
+    let dirSeparator = Path.DirectorySeparatorChar.ToString()
+
     let endsWithDirSeparatorChar (path:string) =
         dirSeparatorChars
         |> Seq.exists (fun char -> path.EndsWith(char.ToString()))

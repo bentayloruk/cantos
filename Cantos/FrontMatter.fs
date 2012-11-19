@@ -17,7 +17,6 @@ module FrontMatter =
     let FrontMatterFirstLine = "---"
     let FrontMatterLastLine = "---"
     let YamlDocumentEndLine = "..."
-    
 
     ///Loads Yaml docs from some Yaml document text.
     let yamlDocs yamlDocText = 
