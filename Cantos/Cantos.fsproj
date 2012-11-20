@@ -27,6 +27,8 @@
     <DocumentationFile>bin\Debug\Cantos.XML</DocumentationFile>
     <Prefer32Bit>true</Prefer32Bit>
     <StartArguments>"..\..\..\Cantos.SampleSite"</StartArguments>
+    <Externalconsole>True</Externalconsole>
+    <Commandlineparameters>../../../Cantos.SampleSite</Commandlineparameters>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>

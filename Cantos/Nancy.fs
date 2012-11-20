@@ -30,7 +30,7 @@ type StaticSiteBootstrapper() =
     inherit DefaultNancyBootstrapper() with
         override x.ConfigureConventions(conventions) =
             base.ConfigureConventions(conventions)
-            System.Diagnostics.Debugger.Break()
+            //System.Diagnostics.Debugger.Break()
             let convention = StaticContentConventionBuilder.AddDirectory("/", "/")
             let _ = conventions.StaticContentsConventions.Add(convention)
             ()
