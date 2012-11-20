@@ -7,7 +7,7 @@ open System
 
 let mutable maybeRootPath = None
 
-
+//Func<NancyContext, string, Response>
 type RootPathProvider() =
 
     let path = 
@@ -29,10 +29,10 @@ type RootPathProvider() =
 type StaticSiteBootstrapper() =
     inherit DefaultNancyBootstrapper() with
         override x.ConfigureConventions(conventions) =
-            let convention = StaticContentConventionBuilder.AddDirectory("/","")
-            System.Diagnostics.Debugger.Break()
-            let _ = conventions.StaticContentsConventions.Add(convention)
             base.ConfigureConventions(conventions)
+            System.Diagnostics.Debugger.Break()
+            let convention = StaticContentConventionBuilder.AddDirectory("/", "/content")
+            let _ = conventions.StaticContentsConventions.Add(convention)
             ()
         override x.DiagnosticsConfiguration = Nancy.Diagnostics.DiagnosticsConfiguration(Password = @"goldfish")
         override x.RootPathProvider = typeof<RootPathProvider>
