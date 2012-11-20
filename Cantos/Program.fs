@@ -6,11 +6,6 @@ open Markdown
 
 module Program =
 
-    type RunResult = 
-        | Success = 0
-        | Fail = 1 
-
-
     //Preview server function.
     let runPreviewServer (websitePath:SitePath) (port: Port) =
         FireflyServer.runPreviewServer websitePath.AbsolutePath port
