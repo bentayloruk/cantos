@@ -54,6 +54,7 @@
     <Compile Include="Tracer.fs" />
     <Compile Include="Cantos.fs" />
     <Compile Include="FrontMatter.fs" />
+    <Compile Include="Template.fs" />
     <Compile Include="Html.fs" />
     <Compile Include="Markdown.fs" />
     <Compile Include="Input.fs" />

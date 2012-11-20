@@ -11,12 +11,16 @@ open System.Collections.Generic
 ///
 module FrontMatter = 
 
-    type FrontMatterValue = | KeyValue of string * string
-    type FrontMatterValueList = list<FrontMatterValue>
+    type FrontMatterValue = | String of string
+    type FrontMatterValueKey = string
+    type FrontMatterValueMap = Map<FrontMatterValueKey, FrontMatterValue>
 
     let FrontMatterFirstLine = "---"
     let FrontMatterLastLine = "---"
     let YamlDocumentEndLine = "..."
+
+    let maybeGetValue (valueMap:FrontMatterValueMap) key = 
+        if valueMap.ContainsKey(key) then Some(valueMap.[key]) else None
 
     ///Loads Yaml docs from some Yaml document text.
     let yamlDocs yamlDocText = 
@@ -24,23 +28,23 @@ module FrontMatter =
         yaml.Load(new StringReader(yamlDocText))
         yaml.Documents
 
-    ///Converts a yaml doc string into front matter args.
-    let yamlArgs (yamlDoc:string) =
+    ///Converts a yaml doc string into front map.
+    let yamlArgs (yamlDoc:string) : FrontMatterValueMap =
 
         let docs = yamlDocs yamlDoc
         
         if docs.Count <> 1 then raiseNotImpl "We only support one front matter yaml document."
 
         match docs.[0].RootNode with 
-        | null -> [] 
+        | null -> Map.empty 
         | :? YamlMappingNode as mappingNode -> 
             [ for child in mappingNode.Children do
                 match child.Key, child.Value with
                 | (:? YamlScalarNode as key), (:? YamlScalarNode as value) -> 
-                    yield FrontMatterValue.KeyValue(key.ToString(), value.ToString())
+                    yield (key.ToString()), String(value.ToString())
                 | (_, _) -> raiseNotImpl "We only have support for simple Yaml key value pairs (YamlScalarNode to YamlScalarNode) at the moment." 
-            ]
-        | _ -> [] //Some other type of YamlNode... 
+            ] |> Map.ofSeq
+        | _ -> Map.empty //Some other type of YamlNode... 
 
     ///Reads the front matter from a reader.
     let readFrontMatterFromReader (reader:#TextReader) =

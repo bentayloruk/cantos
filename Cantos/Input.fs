@@ -16,7 +16,7 @@ module Input =
     type InputFileInfo = 
         { FileInfo:FileInfo;
           SitePath:SitePath
-          FrontMatter:option<FrontMatterValueList>;
+          FrontMatter:option<FrontMatterValueMap>;
           ContentReader:unit->StreamReader;
           }
 

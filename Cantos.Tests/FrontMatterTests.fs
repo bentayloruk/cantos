@@ -18,7 +18,7 @@ let ``Parse Yaml OK`` () =
     test
         <@
         let args = yamlArgs textWithFrontMatter 
-        args.Length = 2
+        args.Count = 2
         @>
 
 [<Fact>]
