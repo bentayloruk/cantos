@@ -11,7 +11,7 @@ open Gate;
 
 let private writeLn (s:string) = Console.WriteLine(s)
 
-let previewServer path (port:int) =
+let runPreviewServer path (port:int) =
 
     let server = Firefly.Http.ServerFactory()
     let requestHandler (a:IDictionary<string,System.Object>) (resultDelegate:ResultDelegate) (err:Action<Exception>) = 
