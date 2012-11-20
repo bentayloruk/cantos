@@ -13,7 +13,8 @@ module Program =
 
     //Preview server function.
     let runPreviewServer (websitePath:SitePath) (port: Port) =
-        FireflyServer.fileSystemServer websitePath.AbsolutePath port
+        //FireflyServer.fileSystemServer websitePath.AbsolutePath port
+        Nancy.runPreviewServer websitePath.AbsolutePath port
 
     //Run cantos.  MAYBE move this elsewhere.
     let runCantos (siteConfig:SiteConfig) (inputConfig:InputConfig) (pathProcessors:list<SitePathProcessor>) = 

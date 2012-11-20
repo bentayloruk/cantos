@@ -31,7 +31,7 @@ type StaticSiteBootstrapper() =
         override x.ConfigureConventions(conventions) =
             base.ConfigureConventions(conventions)
             System.Diagnostics.Debugger.Break()
-            let convention = StaticContentConventionBuilder.AddDirectory("/", "/content")
+            let convention = StaticContentConventionBuilder.AddDirectory("/", "/")
             let _ = conventions.StaticContentsConventions.Add(convention)
             ()
         override x.DiagnosticsConfiguration = Nancy.Diagnostics.DiagnosticsConfiguration(Password = @"goldfish")
