@@ -1,12 +1,26 @@
 ﻿namespace Cantos
 
+[<AutoOpen>]
+module Protection =
+    let protect f onErr =
+        try f with | ex -> onErr ex 
+        
 ///
 ///Path functions.
 ///
+[<AutoOpen>]
 module Path =
     open System.IO
+    open System
+    open System.Text.RegularExpressions
 
     let dirSeparatorChars = [|  Path.DirectorySeparatorChar; Path.AltDirectorySeparatorChar|]
+
+    let invalidFileExtensionChars = [ yield! Path.GetInvalidFileNameChars(); yield '.' ]
+
+    let invalidFileExtensionRegex = 
+        let regex = String.Join("", invalidFileExtensionChars) 
+        new Regex(sprintf "[%s]" (Regex.Escape(regex)))
 
     ///The Path.DirectorySeparatorChar as a string (x-plat).
     let dirSeparator = Path.DirectorySeparatorChar.ToString()
@@ -15,9 +29,34 @@ module Path =
         dirSeparatorChars
         |> Seq.exists (fun char -> path.EndsWith(char.ToString()))
 
+    let ensureEndsWithDirSeparatorChar (path:string) =
+        if endsWithDirSeparatorChar path then path
+        else path + Path.DirectorySeparatorChar.ToString()
+
     let changeExtension extension path = Path.ChangeExtension(path, extension)
 
     let combine parts = Path.Combine(parts)
+
+    //TODO read up on F# comparison constraints.  http://blogs.msdn.com/b/dsyme/archive/2009/11/08/equality-and-comparison-constraints-in-f-1-9-7.aspx
+    type FileExtension private(extension:string) =
+        //Make illegal states unrepresentable!
+        let lowered = extension.ToLowerInvariant()
+
+        static member Create(extension) =
+            if invalidFileExtensionRegex.IsMatch(extension) then 
+                raiseArgEx """Extension contains invalid filename characters or a dot ".".""" "extension"
+            else FileExtension(extension)
+
+        member private x.Extension = extension
+
+        override x.Equals(yobj) = 
+            match yobj with
+            | :? FileExtension as fe -> String.Compare(fe.Extension, extension, StringComparison.InvariantCultureIgnoreCase) = 0
+            | _ -> false 
+
+        override x.ToString() = extension
+
+        override x.GetHashCode() = hash lowered
 
 module FileSystem = 
     open System.IO.Abstractions

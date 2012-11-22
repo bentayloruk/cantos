@@ -40,7 +40,7 @@ let ``ChangeExtension should work when source is file`` () =
     test
         <@
         let sp = SitePath.Create(@"c:\ben\", @"test.md")
-        let sp = sp.ChangeExtension(".html")
+        let sp = sp.ChangeExtension(FileExtension.Create("html"))
         Path.GetExtension(sp.AbsolutePath) = ".html"
         @>
 
@@ -54,7 +54,7 @@ let ``SameRelativePathOrChild spec`` () =
 [<Fact>]
 let ``ChangeExtension should throw invalidop when source is Dir`` () =
     let sp = SitePath.Create(@"c:\ben\", @"sub-dir\")
-    Assert.Throws<InvalidOperationException>(fun () -> sp.ChangeExtension(".html") |> ignore)
+    Assert.Throws<InvalidOperationException>(fun () -> sp.ChangeExtension(FileExtension.Create("html")) |> ignore)
 
 [<Fact>]
 let ``RootUrl returns file URL even when no file extension`` () =

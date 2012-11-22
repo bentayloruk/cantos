@@ -16,12 +16,19 @@ type SitePath private (siteRootPath, siteRootRelativePath) =
         if Path.IsPathRooted(siteRootDir) <> true then
             raiseArgEx "Not an absolute path." "siteRootPath"
         if Path.endsWithDirSeparatorChar siteRootDir <> true then
-            raiseArgEx "Does not end with a directory separator character." "siteRootPath"
+            raiseArgEx "Does not end with a directory separator character." "siteRootDir"
         if Path.IsPathRooted(siteRootRelativePath) = true then
             raiseArgEx "Not a relative path." "siteRootRelativePath"
         SitePath(siteRootDir, siteRootRelativePath)
 
     member x.AbsolutePath = absolutePath
+
+    member x.HasExtension extensions = 
+        //Probably should only take one extension and leave the Seq.exists to elsewhere.
+        if Path.HasExtension(absolutePath) then
+            let extension = FileExtension.Create(Path.GetExtension(absolutePath).Substring(1))//Remove leading .
+            extensions |> Seq.exists (fun ex -> extension.Equals(ex))
+        else false
 
     member x.RelativePath = siteRootRelativePath
 
@@ -54,8 +61,8 @@ type SitePath private (siteRootPath, siteRootRelativePath) =
     member x.SwitchRelative(newRelativePath) =
         SitePath(siteRootPath, newRelativePath)
 
-    member x.ChangeExtension(extension) =
+    member x.ChangeExtension(extension:FileExtension) =
         if Path.endsWithDirSeparatorChar siteRootRelativePath then raiseInvalidOp "Path ends with directory separator char.  Probably not a file."
-        let newRelative = Path.changeExtension extension siteRootRelativePath
+        let newRelative = Path.changeExtension (extension.ToString()) siteRootRelativePath
         SitePath.Create(siteRootPath, newRelative)
 

@@ -6,21 +6,17 @@ open System.Text
 open YamlDotNet.RepresentationModel
 open System.Collections.Generic
 
+    
 ///
 ///Module with functions to deal with file front matter.
 ///
 module FrontMatter = 
 
-    type FrontMatterValue = | String of string
-    type FrontMatterValueKey = string
-    type FrontMatterValueMap = Map<FrontMatterValueKey, FrontMatterValue>
+    type FrontMatterBlock = { Text:string; LineCount:int; }
 
     let FrontMatterFirstLine = "---"
     let FrontMatterLastLine = "---"
     let YamlDocumentEndLine = "..."
-
-    let maybeGetValue (valueMap:FrontMatterValueMap) key = 
-        if valueMap.ContainsKey(key) then Some(valueMap.[key]) else None
 
     ///Loads Yaml docs from some Yaml document text.
     let yamlDocs yamlDocText = 
@@ -29,10 +25,10 @@ module FrontMatter =
         yaml.Documents
 
     ///Converts a yaml doc string into front map.
-    let yamlArgs (yamlDoc:string) : FrontMatterValueMap =
-
-        let docs = yamlDocs yamlDoc
+    let yamlArgs frontMatterBlock : MetaValueMap =
         
+        let yamlDoc = sprintf "---\n%s\n..." frontMatterBlock.Text
+        let docs = yamlDocs yamlDoc
         if docs.Count <> 1 then raiseNotImpl "We only support one front matter yaml document."
 
         match docs.[0].RootNode with 
@@ -41,13 +37,13 @@ module FrontMatter =
             [ for child in mappingNode.Children do
                 match child.Key, child.Value with
                 | (:? YamlScalarNode as key), (:? YamlScalarNode as value) -> 
-                    yield (key.ToString()), String(value.ToString())
+                    yield (key.ToString()), MetaValue.String(value.ToString())
                 | (_, _) -> raiseNotImpl "We only have support for simple Yaml key value pairs (YamlScalarNode to YamlScalarNode) at the moment." 
             ] |> Map.ofSeq
         | _ -> Map.empty //Some other type of YamlNode... 
 
-    ///Reads the front matter from a reader.
-    let readFrontMatterFromReader (reader:#TextReader) =
+    ///Reads the front matter from a reader.  Does not assume Yaml.  Just pulls the text between ---.
+    let readFrontMatterBlock (reader:#TextReader) =
 
         if reader.ReadLine() <> FrontMatterFirstLine then
             None
@@ -55,16 +51,12 @@ module FrontMatter =
             let sb = StringBuilder()
             let append (text:string) = sb.AppendLine(text) |> ignore
 
-            append FrontMatterFirstLine
-
             let rec readUntilFrontMatterEnds linePos =
 
                 match reader.ReadLine() with
 
                 | line when line = FrontMatterLastLine ->
-                    //Append end of Yaml doc ... rather than our end of front matter --- 
-                    append YamlDocumentEndLine
-                    Some(sb.ToString(), linePos + 1)
+                    Some({ Text = sb.ToString(); LineCount = linePos + 1})
 
                 | null -> None //The first line was FM but ran off end.  TODO report this? 
 
@@ -74,22 +66,7 @@ module FrontMatter =
 
             readUntilFrontMatterEnds 1 //as read the first line...
 
-    ///Reads front matter from a string.
-    let frontMatterArgs(text:string) =
-        use reader = new StringReader(text)
-        readFrontMatterFromReader reader
-        
-    ///Reads front matter from a file.  Returns None if no front matter and list of 0-* args if any.
-    let readFileFrontMatterArgs (filePath:string) =
-
-        if not <| File.Exists(filePath) then raiseArgEx "File does not exist." filePath
-
-        use stream = File.Open(filePath, FileMode.Open, FileAccess.Read)
-        use reader = new StreamReader(stream)
-
-        match readFrontMatterFromReader reader with
-        | None -> None, 0
-        | Some(fm, linePos) ->
-            let values = yamlArgs fm
-            Some(values), linePos
-
+    let maybeReadFrontMatterArgs reader =
+        match readFrontMatterBlock reader with
+        | Some(fmBlock) -> Some(yamlArgs fmBlock)
+        | None -> None
