@@ -54,11 +54,8 @@
     <Compile Include="SitePath.fs" />
     <Compile Include="Cantos.fs" />
     <Compile Include="FrontMatter.fs" />
-    <Compile Include="Template.fs" />
     <Compile Include="Processors.fs" />
-    <Compile Include="Output.fs" />
     <Compile Include="Generators.fs" />
-    <Compile Include="Toc.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
     <Content Include="Ideas.txt" />

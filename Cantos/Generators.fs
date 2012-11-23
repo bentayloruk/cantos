@@ -1,5 +1,7 @@
 ﻿namespace Cantos
 
+///Generators generate output StreamInfo instances.  These represent streams that can be processed and written.
+
 [<AutoOpen>]
 module FileSystemGenerator = 
 
