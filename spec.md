@@ -1,20 +1,11 @@
 Cantos is a static site generator.
 
-
-
-
----
-FrontMatter
----
-Body
-
-Input to Cantos is a list of streams.
-
+Cantos deals in streams.
 
 
 A stream that starts with --- will be considered to contain front matter.  A stream not starting with --- will be copied to an output stream without modification.  A stream that starts with --- but subsequently does not contain a closing --- (end of front matter) will be considered invalid and an error will be thrown.
 
-Cantos does not hold all streams in memory.  Instead, Cantos plugins operate on StreamInfo records that contain stream meta-data, identity and the ability to create a reader for the stream.  This should mean that Cantos can operate on very large sites (we are trading speed for better memory profile).
+Cantos does not hold all streams in memory.  Instead, Cantos plugins operate on StreamInfo records that contain stream meta-data, identity and the ability to create a reader for the stream.  This should mean that Cantos can operate on very large sites (we are trading speed for better memory profile).  This is not necessary and will likely never be needed, but I wanted to try out the "Unix style" and stick to this if possible (for the exercise).
 
 All Cantos out-of-the-box features will be built using extension methods accessible to all.  This should mean that the application if more flexible than having two models.
 
