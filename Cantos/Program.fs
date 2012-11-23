@@ -32,8 +32,8 @@ module Program =
 
             //Get in and out path.
             let siteInPath = ensureEndsWithDirSeparatorChar (Path.GetFullPath(argv.[0]))
-            let path parts = Path.Combine( siteInPath :: parts |> Array.ofList)
-            let siteOutPath = path [ "_site" + Path.DirectorySeparatorChar.ToString() ]
+            let path parts = Path.Combine( siteInPath :: parts |> Seq.map ensureEndsWithDirSeparatorChar |> Array.ofSeq)//Todo fix this so can't get wrong.
+            let siteOutPath = path [ "_site" ]
 
             //Partially apply functions with defaults.
             let tracer = ConsoleTracer() :> ITracer
