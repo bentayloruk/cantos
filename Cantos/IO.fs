@@ -4,6 +4,10 @@
 module Protection =
     let protect f onErr =
         try f with | ex -> onErr ex 
+
+module FileSystem = 
+    open System.IO.Abstractions
+    let mutable fs = FileSystem() :> IFileSystem
         
 ///
 ///Path functions.
@@ -13,6 +17,7 @@ module Path =
     open System.IO
     open System
     open System.Text.RegularExpressions
+    open FileSystem
 
     let dirSeparatorChars = [|  Path.DirectorySeparatorChar; Path.AltDirectorySeparatorChar|]
 
@@ -37,6 +42,8 @@ module Path =
 
     let combine parts = Path.Combine(parts)
 
+    let getFullPath path = fs.Path.GetFullPath(path) 
+
     //TODO read up on F# comparison constraints.  http://blogs.msdn.com/b/dsyme/archive/2009/11/08/equality-and-comparison-constraints-in-f-1-9-7.aspx
     type FileExtension private(extension:string) =
         //Make illegal states unrepresentable!
@@ -58,9 +65,8 @@ module Path =
 
         override x.GetHashCode() = hash lowered
 
-module FileSystem = 
-    open System.IO.Abstractions
-    let mutable fs = FileSystem() :> IFileSystem
+
+
 
 ///
 ///File functions.
@@ -121,3 +127,7 @@ module Dir =
         |> Seq.map getFiles
         |> Seq.concat
 
+    ///Gets the current working directory.
+    let currentDir = fs.Directory.GetCurrentDirectory()
+
+    let exists path = fs.Directory.Exists(path)

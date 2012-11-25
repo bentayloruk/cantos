@@ -98,18 +98,18 @@ module Books =
         open FrontMatter
 
         ///Represents a Table of Contents.
-        type Toc = { Name:string; Chapters:list<Chapter>; SitePath:SitePath; }
+        type Toc = { Name:string; Chapters:list<Chapter>; Path:RootedPath; }
         and Chapter = { Headings:list<Heading> }
         and Heading = { Href:string; Title:string; EnableLink: bool; }
 
         ///Creates an AHead for from a file.
-        let maybeHeadingFromSitePath sitePath = 
+        let maybeHeadingFromRootedPath sitePath = 
             Some( { Heading.Href = "TBD"; Title = "TBD"; EnableLink = true; } )
 
         ///Creates a TOC for files in the given site path.
-        let forPath (sitePath:SitePath) name = 
+        let forPath (path:RootedPath) name = 
 
-            let tocSectionDirs = Directory.GetDirectories(sitePath.AbsolutePath)
+            let tocSectionDirs = Directory.GetDirectories(path.AbsolutePath)
 
             let chaptersWithAtLeastOneHeading = 
                 [
@@ -117,8 +117,8 @@ module Books =
 
                         let headings = 
                             Dir.getFiles tocSectionDir
-                            |> Seq.map (fun filePath -> sitePath.RelativeSitePath(filePath)) 
-                            |> Seq.choose maybeHeadingFromSitePath 
+                            |> Seq.map (fun filePath -> path.RelativeRootedPath(filePath)) 
+                            |> Seq.choose maybeHeadingFromRootedPath 
                             |> List.ofSeq
 
                         if headings.Length > 0 then
@@ -126,7 +126,7 @@ module Books =
                 ]
 
             { 
-                SitePath = sitePath;
+                Path = path;
                 Toc.Name = name;
                 Chapters = chaptersWithAtLeastOneHeading;
             }

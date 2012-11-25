@@ -51,7 +51,7 @@
     <Compile Include="Mime.fs" />
     <Compile Include="IO.fs" />
     <Compile Include="WebServer.fs" />
-    <Compile Include="SitePath.fs" />
+    <Compile Include="RootedPath.fs" />
     <Compile Include="Cantos.fs" />
     <Compile Include="FrontMatter.fs" />
     <Compile Include="Processors.fs" />

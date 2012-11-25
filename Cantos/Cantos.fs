@@ -7,8 +7,6 @@ open System.IO
 Home of the main Cantos types
 *)
 
-type FilePath = string
-
 //Types used to control Cantos behaviour.
 
 //Exclusions.
@@ -22,21 +20,17 @@ type MetaValue = | String of string
 type MetaValueKey = string
 type MetaValueMap = Map<MetaValueKey, MetaValue>
 
-//Path processors.  Used to manipulate output SitePaths.
-type SitePathProcessor = SitePath -> SitePath
-
 type Port = int
-type PreviewHttpServer = SitePath -> Port -> unit
 
 type TextOutputInfo =
-    { Path:SitePath;
+    { Path:RootedPath;
       HadFrontMatter: bool;
       Meta:MetaValueMap;
       ReaderF:unit->TextReader;
       }
 
 type BinaryOutputInfo =
-    { Path:SitePath
+    { Path:RootedPath
       Meta:MetaValueMap;
       StreamF:unit->Stream;
       }

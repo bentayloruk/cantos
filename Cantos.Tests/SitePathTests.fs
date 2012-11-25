@@ -1,4 +1,4 @@
-﻿module Cantos.SitePathTests
+﻿module Cantos.RootedPathTests
 
 open Xunit
 open Swensen.Unquote
@@ -7,39 +7,39 @@ open System.IO
 
 [<Fact>]
 let ``siteRootPath ctor arg must end with dir slash`` () =
-    raises<ArgumentException> <@ SitePath.Create(@"c:\site", @"docs\ben\") @>
+    raises<ArgumentException> <@ RootedPath.Create(@"c:\site", @"docs\ben\") @>
 
 [<Fact>]
 let ``siteRootPath ctor arg must be path rooted`` () =
-    raises<ArgumentException> <@ SitePath.Create(@"site", @"docs\ben\") @>
+    raises<ArgumentException> <@ RootedPath.Create(@"site", @"docs\ben\") @>
 
 [<Fact>]
 let ``RootUrl correct when relative path is dir`` () =
-    test <@ SitePath.Create(@"c:\site\", @"docs\ben\").RootUrl = @"/docs/ben/" @>
+    test <@ RootedPath.Create(@"c:\site\", @"docs\ben\").RootUrl = @"/docs/ben/" @>
 
 [<Fact>]
-let ``RelativeSitePath works with absolute path`` () =
+let ``RelativeRootedPath works with absolute path`` () =
     test
         <@
-            let sitePath = SitePath.Create(@"c:\site\", @"docs\ben")
-            let fileSitePath = sitePath.RelativeSitePath(@"c:\site\docs\ben\chap1\file.html")
-            fileSitePath.RootUrl = "/docs/ben/chap1/file.html"
+            let sitePath = RootedPath.Create(@"c:\site\", @"docs\ben")
+            let fileRootedPath = sitePath.RelativeRootedPath(@"c:\site\docs\ben\chap1\file.html")
+            fileRootedPath.RootUrl = "/docs/ben/chap1/file.html"
         @>
 
 [<Fact>]
-let ``RelativeSitePath works with relative path`` () =
+let ``RelativeRootedPath works with relative path`` () =
     test
         <@
-            let sitePath = SitePath.Create(@"c:\site\", @"docs\ben")
-            let fileSitePath = sitePath.RelativeSitePath(@"chap1\file.html")
-            fileSitePath.RootUrl = "/docs/ben/chap1/file.html"
+            let sitePath = RootedPath.Create(@"c:\site\", @"docs\ben")
+            let fileRootedPath = sitePath.RelativeRootedPath(@"chap1\file.html")
+            fileRootedPath.RootUrl = "/docs/ben/chap1/file.html"
         @>
 
 [<Fact>]
 let ``ChangeExtension should work when source is file`` () =
     test
         <@
-        let sp = SitePath.Create(@"c:\ben\", @"test.md")
+        let sp = RootedPath.Create(@"c:\ben\", @"test.md")
         let sp = sp.ChangeExtension(FileExtension.Create("html"))
         Path.GetExtension(sp.AbsolutePath) = ".html"
         @>
@@ -47,21 +47,21 @@ let ``ChangeExtension should work when source is file`` () =
 
 [<Fact>]
 let ``SameRelativePathOrChild spec`` () =
-    let spa = SitePath.Create(@"c:\in\", @"child1\child2\")
-    let spb = SitePath.Create(@"c:\out\", @"child1\child2\child3\test.md")
+    let spa = RootedPath.Create(@"c:\in\", @"child1\child2\")
+    let spb = RootedPath.Create(@"c:\out\", @"child1\child2\child3\test.md")
     Assert.True(spa.IsSameRelativePathOrParent(spb))
 
 [<Fact>]
 let ``ChangeExtension should throw invalidop when source is Dir`` () =
-    let sp = SitePath.Create(@"c:\ben\", @"sub-dir\")
+    let sp = RootedPath.Create(@"c:\ben\", @"sub-dir\")
     Assert.Throws<InvalidOperationException>(fun () -> sp.ChangeExtension(FileExtension.Create("html")) |> ignore)
 
 [<Fact>]
 let ``RootUrl returns file URL even when no file extension`` () =
-    test <@ SitePath.Create(@"c:\site\", @"docs\ben").RootUrl = @"/docs/ben" @>
+    test <@ RootedPath.Create(@"c:\site\", @"docs\ben").RootUrl = @"/docs/ben" @>
 
 [<Fact>]
 let ``RootUrl correct when relative path is file`` () =
-    test <@ SitePath.Create(@"c:\site\", @"docs\ben\test.html").RootUrl = @"/docs/ben/test.html" @>
+    test <@ RootedPath.Create(@"c:\site\", @"docs\ben\test.html").RootUrl = @"/docs/ben/test.html" @>
 
     

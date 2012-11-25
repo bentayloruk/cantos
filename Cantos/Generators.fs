@@ -22,8 +22,8 @@ module FileSystemGenerator =
     let webStreamInfos tracer url skipUrl =
         raiseNotImpl "Placeholder for someday maybe generate from web content ;)"
 
-    let fileStreamInfosFiltered tracer (skipDir:DirectoryExclusion) (skipFile:FileExclusion) (inPath:FilePath) (outPath:FilePath) =
-        let filePaths = Dir.descendantFilePaths inPath skipDir
+    let fileStreamInfosFiltered tracer (skipDir:DirectoryExclusion) (skipFile:FileExclusion) rootPath outPath =
+        let filePaths = Dir.descendantFilePaths rootPath skipDir
 
         seq { for filePath in filePaths do
               let fileInfo = FileInfo(filePath)
@@ -31,7 +31,9 @@ module FileSystemGenerator =
               if not (skipFile fileInfo) then
                   use reader = fileReader filePath
 
-                  let sitePath = SitePath.Create(outPath, filePath.Substring(inPath.Length))
+                  let rootedPath =
+                    let length = if endsWithDirSeparatorChar rootPath then rootPath.Length else rootPath.Length + 1 //Yuk.
+                    RootedPath.Create(outPath, filePath.Substring(length))
 
                   yield
 
@@ -40,11 +42,11 @@ module FileSystemGenerator =
                       | Some(fmBlock) ->
                         let meta = yamlArgs fmBlock
                         let reader = fun () -> offsetFileReader filePath fmBlock.LineCount 
-                        TextOutput({ Path = sitePath; Meta = meta; HadFrontMatter=true; ReaderF = reader; })
+                        TextOutput({ Path = rootedPath; Meta = meta; HadFrontMatter=true; ReaderF = reader; })
 
                       | None ->
                         //Don't text process.
-                        BinaryOutput({ Path = sitePath; Meta = Map.empty; StreamF = fun () -> fileStream filePath })
+                        BinaryOutput({ Path = rootedPath; Meta = Map.empty; StreamF = fun () -> fileStream filePath })
         }
 
 

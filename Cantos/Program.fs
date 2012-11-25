@@ -5,65 +5,68 @@ open System.IO
 
 module Program =
 
-    //Preview server function.
-    let runPreviewServer path (port: Port) = FireflyServer.runPreviewServer path port
+    ///App options.
+    type options =
+        { SourcePath:string
+          DestinationPath:string
+          PreviewServerPort:int } 
 
-    let sitePathFromPath path = 
-        //Ensure directory arg is separator terminated (as SitePath demands it!).
-        //TODO review this path stuff.  Hacked in for sample site relative path.
-        let path = path
-        let path = if Path.endsWithDirSeparatorChar path then path else path + Path.DirectorySeparatorChar.ToString()
-        let path = Path.GetFullPath(path)
-        SitePath.Create(path, "")
+    ///Very basic args for now!
+    let optionsFromArgs (args:array<string>) =
+        let srcPath =   
+            if args.Length > 0 then args.[0] else Dir.currentDir
+            |> Path.getFullPath 
+        if not (Dir.exists srcPath) then raiseArgEx (sprintf "Source path does not exist.\n%s" srcPath) "Source Path"
+        { SourcePath = srcPath;
+          DestinationPath = Path.combine [| srcPath; "_site" |]
+          PreviewServerPort = 8888
+          }
 
-    let write (msg:string) = Console.WriteLine(msg)
-
-    //Entry point.
     [<EntryPoint>]
     let main argv = 
 
         (*
-        For now we are running the Cantos like Jekyll.
-        However, plan this being done from an fsx script (FAKE style), command line or YAML config.  One to discuss.
+        For now we are running Cantos with some defaults.
+        Plan this being done from an fsx script (FAKE style), command line or YAML config.  One to discuss.
         *)
 
-        //For now, if we have one arg, it is the path to the site source.
-        if argv.Length = 1 then
+        let tracer = ConsoleTracer() :> ITracer
 
-            //Get in and out path.
-            let siteInPath = ensureEndsWithDirSeparatorChar (Path.GetFullPath(argv.[0]))
-            let path parts = Path.Combine( siteInPath :: parts |> Seq.map ensureEndsWithDirSeparatorChar |> Array.ofSeq)//Todo fix this so can't get wrong.
-            let siteOutPath = path [ "_site" ]
+        try 
+            //For now, if we have one arg, it is the path to the site source.
+            let options = optionsFromArgs argv;
+            let srcPath, destPath = options.SourcePath, options.DestinationPath
 
-            //Partially apply functions with defaults.
-            let tracer = ConsoleTracer() :> ITracer
-            let tempFileExclusions:FileExclusion = fun fi -> fi.Name.EndsWith("~") || fi.Name.EndsWith(".swp")
-            let appDirExclusions:DirectoryExclusion = fun di -> di.Name.StartsWith("_")
-            let fileStreamInfos = fileStreamInfosFiltered tracer appDirExclusions tempFileExclusions
+            //Set up some default functions/values.
+            let fileStreamInfos =
+                let tempFileExclusions:FileExclusion = fun fi -> fi.Name.EndsWith("~") || fi.Name.EndsWith(".swp")
+                let appDirExclusions:DirectoryExclusion = fun di -> di.Name.StartsWith("_")
+                fileStreamInfosFiltered tracer appDirExclusions tempFileExclusions
+            let srcRelativePath parts = Path.Combine(srcPath :: parts |> Array.ofList)
+            let runPreviewServer = FireflyServer.runPreviewServer srcPath options.PreviewServerPort
                 
             //Generate streams.
             let outputStreams = [
 
                 //Basic site files.
-                yield! fileStreamInfos siteInPath siteOutPath
+                yield! fileStreamInfos srcPath destPath
 
                 //Blog posts.
                 //TODO map according to post properties.
-                yield! fileStreamInfos (path [ "_posts" ]) siteOutPath
+                yield! fileStreamInfos (srcRelativePath [ "_posts" ]) destPath 
             ]
 
             //Process streams.
             let (processors:list<Processor>) = [ markdownProcessor ]
             let applyProcessors streamInfo = 
                 processors |> List.fold (fun acc proc -> proc acc) streamInfo
-
             let processedStreams = outputStreams |> Seq.map applyProcessors 
 
             //Clean output directory.
-            Dir.cleanDir (fun di -> di.Name = ".git") siteOutPath 
+            Dir.cleanDir (fun di -> di.Name = ".git") destPath 
 
             //Write
-            let writer output =
+            let write output =
                 match output with
                 | TextOutput(t) ->
                     use tr = t.ReaderF()
@@ -73,14 +76,15 @@ module Program =
                     use s = b.StreamF()
                     s.CopyTo(fs)
 
-            processedStreams |> Seq.iter writer 
+            processedStreams |> Seq.iter write
+
+            tracer.Info (sprintf "Cantos success.  Wrote site to %s." destPath)
 
             //Preview it!
-            write (sprintf "Cantos success.  Wrote site to %s." siteOutPath)
-            runPreviewServer siteOutPath 8888
+            runPreviewServer 
             let _ = Console.ReadLine()
-
             0
-        else
-            write "Cantos fail.  You must provide the site source path as the single argument."
+        with
+        | ex ->
+            tracer.Info "Cantos fail.  You must provide the site source path as the single argument."
             1
