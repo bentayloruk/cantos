@@ -54,8 +54,8 @@
     <Compile Include="RootedPath.fs" />
     <Compile Include="Cantos.fs" />
     <Compile Include="FrontMatter.fs" />
-    <Compile Include="Processors.fs" />
     <Compile Include="Generators.fs" />
+    <Compile Include="Processors.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
     <Content Include="Ideas.txt" />

@@ -31,6 +31,7 @@ module Program =
         *)
 
         let tracer = ConsoleTracer() :> ITracer
+        tracer.Info <| sprintf "Cantos started %s." (DateTime.Now.ToString())
 
         try 
             //For now, if we have one arg, it is the path to the site source.
@@ -38,14 +39,11 @@ module Program =
             let srcPath, destPath = options.SourcePath, options.DestinationPath
 
             //Set up some default functions/values.
-            let fileStreamInfos =
-                let tempFileExclusions:FileExclusion = fun fi -> fi.Name.EndsWith("~") || fi.Name.EndsWith(".swp")
-                let appDirExclusions:DirectoryExclusion = fun di -> di.Name.StartsWith("_")
-                fileStreamInfosFiltered tracer appDirExclusions tempFileExclusions
+            let fileStreamInfos = fileStreamInfosFiltered appDirExclusions tempFileExclusions
             let srcRelativePath parts = Path.Combine(srcPath :: parts |> Array.ofList)
-            let runPreviewServer = FireflyServer.runPreviewServer srcPath options.PreviewServerPort
+            let runPreviewServer = fun () -> FireflyServer.runPreviewServer srcPath options.PreviewServerPort
                 
-            //Generate streams.
+            //Generate output streams.
             let outputStreams = [
 
                 //Basic site files.
@@ -56,8 +54,18 @@ module Program =
                 yield! fileStreamInfos (srcRelativePath [ "_posts" ]) destPath 
             ]
 
+            //Generate templates and processor.
+            let templateProcessor =
+                let templateMap =
+                    seq { yield! templateGenerator (srcRelativePath [ "_templates" ]) }
+                    |> Seq.map (fun template -> template.Name, template)
+                    |> Map.ofSeq
+                templateProcessor templateMap
+
             //Process streams.
-            let (processors:list<Processor>) = [ markdownProcessor ]
+            let (processors:list<Processor>) =
+                [ markdownProcessor
+                  templateProcessor ]
             let applyProcessors streamInfo = 
                 processors |> List.fold (fun acc proc -> proc acc) streamInfo
             let processedStreams = outputStreams |> Seq.map applyProcessors 
@@ -81,10 +89,10 @@ module Program =
             tracer.Info (sprintf "Cantos success.  Wrote site to %s." destPath)
 
             //Preview it!
-            runPreviewServer 
+            runPreviewServer() 
             let _ = Console.ReadLine()
             0
         with
         | ex ->
-            tracer.Info "Cantos fail.  You must provide the site source path as the single argument."
+            tracer.Info <| sprintf "Cantos exception.\n%s" ex.Message
             1

@@ -1,5 +1,6 @@
 ﻿namespace Cantos
 
+
 ///Markdown conversion.
 [<AutoOpen>]
 module Markdown =
@@ -19,8 +20,8 @@ module Markdown =
     let processExtensions = [ "md"; "markdown" ] |> List.map FileExtension.Create
 
     ///Turns a markdown stream into and html stream.  Returns a new Uri with .html extension.
-    let markdownProcessor (streamInfo:StreamInfo) = 
-        match streamInfo with
+    let markdownProcessor (output:Output) = 
+        match output with
 
         | TextOutput(x) when x.Path.HasExtension(processExtensions) ->
             let path = x.Path.ChangeExtension(FileExtension.Create("html"))
@@ -29,25 +30,22 @@ module Markdown =
             let f = fun () -> new StringReader(html) :> TextReader
             TextOutput({ Path = path; HadFrontMatter = x.HadFrontMatter; ReaderF = f; Meta = x.Meta })
 
-        | TextOutput(_) | BinaryOutput(_) -> streamInfo
+        | TextOutput(_) | BinaryOutput(_) -> output
         
+[<AutoOpen>]
+module TemplateM = 
 
-module Template = 
-
-    ///Template types.
-    type TemplateName = string
-    type Template = { Name:TemplateName}
-    type TemplateList = list<Template>
-    type TemplateMap = Map<TemplateName, Template>
-    type TemplateProvider = unit -> TemplateList
 
     open System.IO
     open FrontMatter
 
-    (*
-    let dirTemplateProvider path filter =
-        ()
-        Dir.getFiles path
+
+    let templateProcessor templateMap (output:Output) =
+        match output with
+        | TextOutput(x) ->
+            output//Falling through for now.
+        | TextOutput(_) | BinaryOutput(_) -> output
+        (*
         |> Seq.filter filter 
         |> Seq.map (fun templatePath ->
             try
@@ -66,7 +64,7 @@ module Template =
         )
         |> Seq.choose (fun x -> x)
         |> Map.ofSeq
-    *)
+        *)
 
 
 ///Used to create one or more books in the site.

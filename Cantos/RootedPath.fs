@@ -7,6 +7,9 @@ open System.IO
 type RootedPath private (rootPart, relativePart) =
 
     let absolutePath = Path.Combine(rootPart, relativePart)
+    let uri = Uri(absolutePath)
+    do
+        if uri.IsFile <> true then raiseArgEx "RelativePart is not a file." "relativePart"
 
     ///Creates a new RootedPath.
     static member Create(rootPart, relativePart) = 
@@ -24,6 +27,8 @@ type RootedPath private (rootPart, relativePart) =
         else false
 
     member x.RelativePath = relativePart
+
+    member x.FileName = Path.GetFileName(absolutePath)
 
     member x.IsSameRelativePathOrParent(rootedPath:RootedPath) =
         if relativePart = rootedPath.RelativePath then true

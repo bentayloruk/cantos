@@ -15,7 +15,7 @@ type UriExclusion = Exclusion<Uri>
 type DirectoryExclusion = Exclusion<DirectoryInfo> 
 type FileExclusion = Exclusion<FileInfo> 
 
-//StreamInfo meta data types.
+//Output meta data types.
 type MetaValue = | String of string
 type MetaValueKey = string
 type MetaValueMap = Map<MetaValueKey, MetaValue>
@@ -35,17 +35,23 @@ type BinaryOutputInfo =
       StreamF:unit->Stream;
       }
 
-type StreamInfo =
+type Output =
     //TODO rename record or DU as will be confusing...
     | TextOutput of TextOutputInfo
     | BinaryOutput of BinaryOutputInfo
 
-type Generator = unit -> seq<StreamInfo> 
-type Processor = StreamInfo -> StreamInfo
+type Generator = unit -> seq<Output> 
+type Processor = Output -> Output
 
 module Meta = 
     let maybeGetValue (valueMap:MetaValueMap) key = 
         if valueMap.ContainsKey(key) then Some(valueMap.[key]) else None
+
+///Template types.
+type TemplateName = string
+type Template = { Name:TemplateName}
+type TemplateMap = Map<TemplateName, Template>
+type TemplateFrontMatter = { Name:string }
 
 type ITracer =
     abstract member Error : string -> unit

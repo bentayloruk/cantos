@@ -10,6 +10,8 @@ module FileSystemGenerator =
     open FrontMatter
      
     let fileStream path = File.Open(path, FileMode.Open, FileAccess.Read) :> Stream
+    let tempFileExclusions:FileExclusion = fun fi -> fi.Name.EndsWith("~") || fi.Name.EndsWith(".swp")
+    let appDirExclusions:DirectoryExclusion = fun di -> di.Name.StartsWith("_")
         
     let offsetFileReader path skipLines = 
         let stream = fileStream path
@@ -22,8 +24,8 @@ module FileSystemGenerator =
     let webStreamInfos tracer url skipUrl =
         raiseNotImpl "Placeholder for someday maybe generate from web content ;)"
 
-    let fileStreamInfosFiltered tracer (skipDir:DirectoryExclusion) (skipFile:FileExclusion) rootPath outPath =
-        let filePaths = Dir.descendantFilePaths rootPath skipDir
+    let fileStreamInfosFiltered (skipDir:DirectoryExclusion) (skipFile:FileExclusion) inRootPath outRootPath =
+        let filePaths = Dir.descendantFilePaths inRootPath skipDir
 
         seq { for filePath in filePaths do
               let fileInfo = FileInfo(filePath)
@@ -32,8 +34,8 @@ module FileSystemGenerator =
                   use reader = fileReader filePath
 
                   let rootedPath =
-                    let length = if endsWithDirSeparatorChar rootPath then rootPath.Length else rootPath.Length + 1 //Yuk.
-                    RootedPath.Create(outPath, filePath.Substring(length))
+                    let length = if endsWithDirSeparatorChar inRootPath then inRootPath.Length else inRootPath.Length + 1 //Yuk.
+                    RootedPath.Create(outRootPath, filePath.Substring(length))
 
                   yield
 
@@ -48,5 +50,21 @@ module FileSystemGenerator =
                         //Don't text process.
                         BinaryOutput({ Path = rootedPath; Meta = Map.empty; StreamF = fun () -> fileStream filePath })
         }
+
+
+    let templateGenerator sourcePath = 
+        //Cheat and use stream function and then map.
+        let toTemplate outputInfo = 
+            match outputInfo with 
+            | TextOutput(textOutput) -> Some({Name = textOutput.Path.FileName}) 
+            | BinaryOutput(_) -> None 
+
+        let templateStreams = fileStreamInfosFiltered appDirExclusions tempFileExclusions sourcePath sourcePath
+
+        templateStreams
+        |> Seq.choose toTemplate
+
+
+
 
 
