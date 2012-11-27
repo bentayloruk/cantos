@@ -39,56 +39,57 @@ module Program =
             let srcPath, destPath = options.SourcePath, options.DestinationPath
 
             //Set up some default functions/values.
-            let fileStreamInfos = fileStreamInfosFiltered appDirExclusions tempFileExclusions
             let srcRelativePath parts = Path.Combine(srcPath :: parts |> Array.ofList)
             let runPreviewServer = fun () -> FireflyServer.runPreviewServer srcPath options.PreviewServerPort
                 
-            //Generate output streams.
-            let outputStreams = [
+            let (siteMeta:MetaMap) = Map.empty
 
-                //Basic site files.
-                yield! fileStreamInfos srcPath destPath
+            //List generators.
+            let (generators:list<Generator>) = [
+                (siteOutputs srcPath destPath)
+                (blogOutputs (srcRelativePath [ "_posts" ]) destPath)
+                ]
 
-                //Blog posts.
-                //TODO map according to post properties.
-                yield! fileStreamInfos (srcRelativePath [ "_posts" ]) destPath 
-            ]
-
-            //Generate templates and processor.
-            let templateProcessor =
-                let templateMap =
-                    seq { yield! templateGenerator (srcRelativePath [ "_templates" ]) }
-                    |> Seq.map (fun template -> template.Name, template)
-                    |> Map.ofSeq
-                templateProcessor templateMap
-
-            //Process streams.
-            let (processors:list<Processor>) =
-                [ markdownProcessor
-                  templateProcessor ]
-            let applyProcessors streamInfo = 
-                processors |> List.fold (fun acc proc -> proc acc) streamInfo
-            let processedStreams = outputStreams |> Seq.map applyProcessors 
+            //Apply generators.
+            let rec run generators outputs meta =   
+                match generators with
+                | h::t ->
+                    let m, o = h meta
+                    run t (Seq.append outputs o)  m
+                | [] -> meta, outputs
+            let siteMeta, outputs = run generators [] Map.empty 
+            let outputs = outputs |> List.ofSeq //As we want siteMeta fully built!
 
             //Clean output directory.
             Dir.cleanDir (fun di -> di.Name = ".git") destPath 
 
-            //Write
-            let write output =
+            //List the transformers.
+            let transformers = [
+                markdownTransformer
+                (layoutTransformer (srcRelativePath [ "_layouts" ]))
+                ]
+
+            //Transform and write!
+            for output in outputs do
+
+                //Transform
+                let output = transformers |> List.fold (fun acc proc -> proc acc) output 
+
+                //Write
                 match output with
-                | TextOutput(t) ->
-                    use tr = t.ReaderF()
-                    File.WriteAllText(t.Path.AbsolutePath, tr.ReadToEnd())//Change to stream write.
+
+                | TextOutput(toi) ->
+                    use r = toi.ReaderF()
+                    File.WriteAllText(toi.Path.AbsolutePath, r.ReadToEnd())//Change to stream write.
+
                 | BinaryOutput(b) ->
                     use fs = File.Create(b.Path.AbsolutePath)
                     use s = b.StreamF()
                     s.CopyTo(fs)
 
-            processedStreams |> Seq.iter write
-
-            tracer.Info (sprintf "Cantos success.  Wrote site to %s." destPath)
-
             //Preview it!
+            tracer.Info (sprintf "Cantos success.  Wrote site to %s." destPath)
+            //TODO preveiw based on cmd line flag.
             runPreviewServer() 
             let _ = Console.ReadLine()
             0

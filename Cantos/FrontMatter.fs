@@ -25,7 +25,7 @@ module FrontMatter =
         yaml.Documents
 
     ///Converts a yaml doc string into front map.
-    let yamlArgs frontMatterBlock : MetaValueMap =
+    let metaValues frontMatterBlock : MetaMap =
         
         let yamlDoc = sprintf "---\n%s\n..." frontMatterBlock.Text
         let docs = yamlDocs yamlDoc
@@ -37,10 +37,19 @@ module FrontMatter =
             [ for child in mappingNode.Children do
                 match child.Key, child.Value with
                 | (:? YamlScalarNode as key), (:? YamlScalarNode as value) -> 
-                    yield (key.ToString()), MetaValue.String(value.ToString())
+                    yield (key.ToString().ToLower()), MetaValue.String(value.ToString())
                 | (_, _) -> raiseNotImpl "We only have support for simple Yaml key value pairs (YamlScalarNode to YamlScalarNode) at the moment." 
             ] |> Map.ofSeq
         | _ -> Map.empty //Some other type of YamlNode... 
+
+    let maybeStringScalar (key:string) (metaValues:MetaMap) =
+        let key = key.ToLower()
+        if metaValues.ContainsKey(key) then
+            match metaValues.[key] with
+            | String(s) -> Some(s)
+            | _ -> None
+        else None
+        
 
     ///Reads the front matter from a reader.  Does not assume Yaml.  Just pulls the text between ---.
     let readFrontMatterBlock (reader:#TextReader) =
@@ -68,5 +77,5 @@ module FrontMatter =
 
     let maybeReadFrontMatterArgs reader =
         match readFrontMatterBlock reader with
-        | Some(fmBlock) -> Some(yamlArgs fmBlock)
+        | Some(fmBlock) -> Some(metaValues fmBlock)
         | None -> None

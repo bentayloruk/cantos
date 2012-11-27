@@ -55,10 +55,9 @@
     <Compile Include="Cantos.fs" />
     <Compile Include="FrontMatter.fs" />
     <Compile Include="Generators.fs" />
-    <Compile Include="Processors.fs" />
+    <Compile Include="Transformers.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
-    <Content Include="Ideas.txt" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
