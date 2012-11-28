@@ -1,5 +1,6 @@
 ---
 categories: [empty, tech, test]
+layout: blog
 # Some sample yaml for test :)
 a: 123                     # an integer
 b: "123"                   # a string, disambiguated by quotes

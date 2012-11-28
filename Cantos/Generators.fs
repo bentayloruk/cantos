@@ -10,17 +10,8 @@ module Generators =
     open System.IO
     open FrontMatter
      
-    let fileStream path = File.Open(path, FileMode.Open, FileAccess.Read) :> Stream
     let tempFileExclusions:FileExclusion = fun fi -> fi.Name.EndsWith("~") || fi.Name.EndsWith(".swp")
     let appDirExclusions:DirectoryExclusion = fun di -> di.Name.StartsWith("_")
-        
-    let private offsetFileReader path skipLines = 
-        let stream = fileStream path
-        let reader = new StreamReader(stream)
-        [1..skipLines] |> List.iter (fun _ -> reader.ReadLine() |> ignore)
-        reader :> TextReader
-
-    let fileReader path = offsetFileReader path 0
 
     let webStreamInfos tracer url skipUrl =
         raiseNotImpl "Placeholder for someday maybe generate from web content ;)"
@@ -39,20 +30,13 @@ module Generators =
             let length = if endsWithDirSeparatorChar inRootPath then inRootPath.Length else inRootPath.Length + 1 //Yuk.
             RootedPath.Create(outRootPath, path.Substring(length))
 
-        let fmBlock =
-            use reader = fileReader path 
-            readFrontMatterBlock reader
-
-        match fmBlock with
-
-        | Some(fmBlock) ->
-            let meta = metaValues fmBlock
-            let readContents = fun () -> offsetFileReader path fmBlock.LineCount 
+        let hadFrontMatter, lineCount, meta = getFileFrontMatterMeta path
+        if hadFrontMatter then
+            let readContents = fun () -> File.offsetFileReader path lineCount 
             TextOutput({ Path = rootedPath; Meta = meta; HadFrontMatter=true; ReaderF = readContents; })
-
-        | None ->
+        else
             //No front matter so don't process (this is ala Jekyll but may change).
-            BinaryOutput({ Path = rootedPath; Meta = Map.empty; StreamF = fun () -> fileStream path })
+            BinaryOutput({ Path = rootedPath; Meta = Map.empty; StreamF = fun () -> File.fileReadStream path })
 
     ///Generates output for all files in and below inPath.  Skips temp files and directories beginnning with _.
     let dirOutputs inPath outPath = 
@@ -64,7 +48,7 @@ module Generators =
         //No changes to meta.
         siteMeta, dirOutputs inPath outPath 
 
-    let toBlogPost (output:Output) = output.ChangeExtension("post")
+    let toBlogPost (output:Output) = output
             
     ///Generates blog post output.
     let blogOutputs postsPath siteOutPath (siteMeta:MetaMap) = 

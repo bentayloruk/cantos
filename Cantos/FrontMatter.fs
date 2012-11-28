@@ -91,7 +91,9 @@ module FrontMatter =
 
             readUntilFrontMatterEnds 1 //as read the first line...
 
-    let maybeReadFrontMatterArgs reader =
-        match readFrontMatterBlock reader with
-        | Some(fmBlock) -> Some(metaValues fmBlock)
-        | None -> None
+    let getFileFrontMatterMeta path =
+        //TODO the return of this tuple is messy.
+        use r = File.fileReader path
+        match readFrontMatterBlock r with
+        | Some(fmBlock) -> true, fmBlock.LineCount, metaValues fmBlock
+        | None -> false, 0, Map.empty 

@@ -74,11 +74,22 @@ module Path =
 [<RequireQualifiedAccess>]
 module File =
     open FileSystem 
+    open System.IO
 
     ///Read all text from file at path.  Uses File.ReadAllText.
     let readAllText path = fs.File.ReadAllText(path)
 
     let writeAllText path contents = fs.File.WriteAllText(path, contents)
+
+    let fileReadStream path = fs.File.Open(path, FileMode.Open, FileAccess.Read)
+        
+    let offsetFileReader path skipLines = 
+        let stream = fileReadStream path
+        let reader = new StreamReader(stream)
+        [1..skipLines] |> List.iter (fun _ -> reader.ReadLine() |> ignore)
+        reader :> TextReader
+
+    let fileReader path = offsetFileReader path 0
 
 
 ///

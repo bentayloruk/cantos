@@ -21,10 +21,11 @@ type MetaKey = string
 type MetaMap = Map<MetaKey, MetaValue>
     
 [<AutoOpen>]
-[<RequireQualifiedAccess>]
 module Meta = 
-    let maybeGetValue (valueMap:MetaMap) key = 
-        if valueMap.ContainsKey(key) then Some(valueMap.[key]) else None
+    //TODO should extend when MetaMap.  Look up constraints/declaration.
+    type Map<'a,'b> when 'a : comparison with
+        member x.tryGetValue(key) = 
+            if x.ContainsKey(key) then Some(x.[key]) else None
 
 type Port = int
 
@@ -35,6 +36,11 @@ type TextOutputInfo =
       Meta:MetaMap;
       ReaderF:unit->TextReader;
       }
+    member x.DecorateReader f =
+        { x with
+            ReaderF = fun () ->
+                use reader = x.ReaderF()
+                (f reader) :> TextReader }
 
 type BinaryOutputInfo =
     { Path:RootedPath
@@ -64,12 +70,7 @@ type Output =
     member x.DecorateTextOutputReader f =
         //Review.  This sorta feels wrong.  Is it? 
         match x with
-        | TextOutput(toi) ->
-            let newReader =
-                fun () ->
-                    use reader = toi.ReaderF()
-                    (f reader) :> TextReader
-            TextOutput({ toi with ReaderF = newReader })
+        | TextOutput(toi) -> TextOutput(toi.DecorateReader f)
         | _ -> x//Not text.
 
 module Seq = 
@@ -82,8 +83,8 @@ type Transformer = Output -> Output
 
 ///Template types.
 type TemplateName = string
-type Template = string
-type TemplateMap = Map<TemplateName, Template>
+type TemplateInfo = { FileName:string; Template:string; Meta:MetaMap } 
+type TemplateMap = Map<TemplateName, TemplateInfo>
 
 type ITracer =
     abstract member Error : string -> unit

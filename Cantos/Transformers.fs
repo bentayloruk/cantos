@@ -1,14 +1,26 @@
 ﻿namespace Cantos
 
 [<AutoOpen>]
-module TemplateEngines =
+module TemplateTransformers =
 
     open DotLiquid
     open System.IO
         
-    let liquidTransform (reader:TextReader) =
-        let template = Template.Parse(reader.ReadToEnd())
-        new StringReader(template.Render())
+    let liquidTransform (meta:MetaMap) (templateReader:TextReader) =
+        let hash = 
+            let hash = Hash()
+            meta
+            |> Map.iter (fun key value ->
+                let add x = hash.Add(key, x)
+                match value with
+                | String(s) -> add s
+                | Int(i) -> add i 
+                | List(l) -> add l)
+
+            hash
+
+        let template = Template.Parse(templateReader.ReadToEnd())
+        new StringReader(template.Render(hash))
 
 ///Markdown conversion.
 [<AutoOpen>]
@@ -40,7 +52,10 @@ module ContentTransformer =
     
     ///Transforms the content out output using the Liquid templating engine.
     ///Does not render templates (this allows content post processing with other transformers).
-    let liquidContentTransformer (output:Output) = output.DecorateTextOutputReader(liquidTransform)
+    let liquidContentTransformer (output:Output) =
+        //TODO create the hash.
+        let f = liquidTransform Map.empty
+        output.DecorateTextOutputReader(f)
 
 [<AutoOpen>]
 module LayoutTransformer = 
@@ -50,66 +65,45 @@ module LayoutTransformer =
     open System.Collections.Generic
     open System
 
+    let (|FileNameWithoutExt|) (path:RootedPath) = Path.GetFileNameWithoutExtension(path.AbsolutePath).ToLower()
+
     ///Transforms outputs that have "layout" meta.
     let layoutTransformer layoutPath (output:Output) =
 
         ///Create a map of layouts below sourcePath.
+        //TODO make it easier to get files with front matter.  This is too much mess.
         let templateMap =
             getDescendantFileInfos appDirExclusions tempFileExclusions layoutPath
-            |> Seq.map (fun fileInfo ->
-                let path = fileInfo.FullName
-                use fileReader = fileReader path 
-                Path.GetFileName(path).ToLower(), fileReader.ReadToEnd())
+            |> Seq.map (getOutputForFileInfo layoutPath layoutPath)
+            |> Seq.choose (fun output ->
+                match output with
+                | TextOutput({ Path = FileNameWithoutExt(name); ReaderF = reader; HadFrontMatter = _; Meta = meta}) ->
+                    use r = reader()
+                    Some(name, { FileName = name ; Meta = meta; Template = r.ReadToEnd()} )
+                | BinaryOutput(_) -> None )
             |> Map.ofSeq
 
-        let toDictionary pairs =
-            let dic = Dictionary<string,obj>()
-            for (k,v) in pairs do dic.Add(k, v)
-            dic
+        //TODO this code is not super readable.  Fix it up.
+        let rec recurseLayouts (meta:MetaMap) (output:TextOutputInfo) =
+            match meta.tryGetValue("layout") with
+
+            | Some(String(layoutName)) ->
+                match templateMap.tryGetValue(layoutName) with
+
+                | Some(templateInfo) ->
+                    let o = 
+                        output.DecorateReader(fun tr ->
+                            let meta = templateInfo.Meta.Add("content", MetaValue.String(tr.ReadToEnd()))
+                            use templateReader = new StringReader(templateInfo.Template)
+                            liquidTransform meta templateReader)
+
+                    recurseLayouts templateInfo.Meta o 
+
+                | None -> output//Log!!
+
+            | None | Some(_) -> output 
 
 
         match output with
-
-        | TextOutput(x) ->
-            
-            match maybeStringScalar "template" x.Meta with
-
-            | Some(value) -> 
-
-                let value = value.ToLower() + ".liq"//TODO hacked in Liquid for now.
-                output
-                    (*
-                if templateMap.ContainsKey(value) then
-                    let content = fun () -> new StringReader(liquidTransform templateMap.[value]) :> TextReader
-                    //Render the leaf document.
-                    let d = toDictionary output. 
-                    let initialRender = Render.StringToString(content, d)
-
-                    //Recurse up the parent templates providing the "content".
-                    let rec inner content' templateName' vars' =
-                        match templatesMap.TryFind templateName' with
-                        | Some(template) -> 
-                            //Join template args with current args
-                            let varAcc = 
-                                seq {yield! vars'; yield! template.Vars } 
-                                //HACK!!! take out "template" vars as we will get dupes.
-                                |> Seq.filter (fun (name,_) -> name <> "template")
-                                |> List.ofSeq
-                            let dic = toDictionary varAcc
-                            dic.Add("content", content')
-                            let output = Render.StringToString(template.Template, dic)
-                            match template.ParentFileName with
-                            | Some(parent) ->  inner output parent varAcc 
-                            | None -> output
-                        | None -> printfn "Missing template %s" templateName'; content' //failwith <| sprintf "No template named %s." templateName'
-                    inner initialRender templateName vars 
-                    TextOutput({ x with ReaderF = content })
-
-                else output 
-                *)
-                    
-            | None -> output 
-
-        | BinaryOutput(_) -> output 
-
-
+        | TextOutput(x) -> TextOutput(recurseLayouts x.Meta x)
+        | _ -> output

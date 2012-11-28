@@ -1,5 +1,5 @@
 ---
-template: main
+layout: main
 ---
 # Cantos Contributors
 

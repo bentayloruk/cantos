@@ -11,6 +11,7 @@ open Gate;
 
 let private writeLn (s:string) = Console.WriteLine(s)
 
+//REAL HACK FEST IN HERE.  IT jUST ABOUT HANGS TOGETHER :)  NOT A HIGH PRIORITY.
 let runPreviewServer path (port:int) =
 
     let server = Firefly.Http.ServerFactory()
