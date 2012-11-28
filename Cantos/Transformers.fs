@@ -15,8 +15,7 @@ module TemplateTransformers =
                 match value with
                 | String(s) -> add s
                 | Int(i) -> add i 
-                | List(l) -> add l)
-
+                | List(l) -> raiseNotImpl "Need to recursively map.")
             hash
 
         let template = Template.Parse(templateReader.ReadToEnd())
@@ -65,6 +64,7 @@ module LayoutTransformer =
     open System.Collections.Generic
     open System
 
+    //Just playin.
     let (|FileNameWithoutExt|) (path:RootedPath) = Path.GetFileNameWithoutExtension(path.AbsolutePath).ToLower()
 
     ///Transforms outputs that have "layout" meta.
@@ -84,6 +84,7 @@ module LayoutTransformer =
             |> Map.ofSeq
 
         //TODO this code is not super readable.  Fix it up.
+        //Look for "layout" in meta.  Transform, then recurse looking for "layout" in the layout!
         let rec recurseLayouts (meta:MetaMap) (output:TextOutputInfo) =
             match meta.tryGetValue("layout") with
 
@@ -91,13 +92,14 @@ module LayoutTransformer =
                 match templateMap.tryGetValue(layoutName) with
 
                 | Some(templateInfo) ->
+                    let mergedMeta = templateInfo.Meta.join(meta.Remove("layout"))
                     let o = 
                         output.DecorateReader(fun tr ->
-                            let meta = templateInfo.Meta.Add("content", MetaValue.String(tr.ReadToEnd()))
+                            let meta = mergedMeta.Add("content", MetaValue.String(tr.ReadToEnd()))
                             use templateReader = new StringReader(templateInfo.Template)
                             liquidTransform meta templateReader)
 
-                    recurseLayouts templateInfo.Meta o 
+                    recurseLayouts mergedMeta o 
 
                 | None -> output//Log!!
 
@@ -105,5 +107,5 @@ module LayoutTransformer =
 
 
         match output with
-        | TextOutput(x) -> TextOutput(recurseLayouts x.Meta x)
+        | TextOutput(toi) -> TextOutput(recurseLayouts toi.Meta toi) 
         | _ -> output

@@ -48,7 +48,7 @@ module FrontMatter =
                     yield (key.ToString().ToLower()), MetaValue.String(value.ToString())
 
                 | (:? YamlScalarNode as key), (:? YamlSequenceNode as value) -> 
-                    let values = value |> Seq.map (fun node -> node.ToString()) |> List.ofSeq//TODO this is a hack as may not all be Scalar nodes.
+                    let values = value |> Seq.map (fun node -> MetaValue.String(node.ToString())) |> List.ofSeq//TODO this is a hack as may not all be Scalar nodes.
                     yield (key.ToString().ToLower()), MetaValue.List(values)
 
                 | (_, _) ->

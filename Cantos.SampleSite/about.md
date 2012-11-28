@@ -1,5 +1,6 @@
 ---
 layout: main
+title: Cantos Contrib
 ---
 # Cantos Contributors
 

@@ -16,7 +16,7 @@ type DirectoryExclusion = Exclusion<DirectoryInfo>
 type FileExclusion = Exclusion<FileInfo> 
 
 //Output meta data types.
-type MetaValue = | String of string | Int of int | List of list<string>
+type MetaValue = | String of string | Int of int | List of list<MetaValue>
 type MetaKey = string
 type MetaMap = Map<MetaKey, MetaValue>
     
@@ -26,7 +26,9 @@ module Meta =
     type Map<'a,'b> when 'a : comparison with
         member x.tryGetValue(key) = 
             if x.ContainsKey(key) then Some(x.[key]) else None
-
+        member x.join (q:Map<'a,'b>) = 
+            Map(Seq.concat [ (Map.toSeq x) ; (Map.toSeq q) ])
+            
 type Port = int
 
 [<System.Diagnostics.DebuggerDisplayAttribute("{Path.AbsolutePath}")>]
