@@ -64,8 +64,7 @@ module Generators =
         //No changes to meta.
         siteMeta, dirOutputs inPath outPath 
 
-    let toBlogPost output =
-        mapTextOutput (fun toi -> { toi with TextOutputInfo.Path = toi.Path.ChangeExtension(FileExtension.Create("post")) }) output
+    let toBlogPost (output:Output) = output.ChangeExtension("post")
             
     ///Generates blog post output.
     let blogOutputs postsPath siteOutPath (siteMeta:MetaMap) = 
@@ -78,3 +77,65 @@ module Generators =
         let siteMeta = siteMeta.Add("posts.count", Int(posts.Length)) 
 
         siteMeta, posts :> seq<Output> 
+
+///Used to create one or more books in the site.
+module BookGenerator =
+
+    ///Removes leading numbers and -.  Example:  1010-myname -> myname.  
+    let deNumberWang (name:string) =
+        let wangIndex = name.IndexOf('-')
+        if wangIndex = -1 then name else
+            let maybeNumber = name.Substring(0, wangIndex)
+            let (parsed, number) = System.Int32.TryParse(maybeNumber)
+            if parsed = true then name.Substring(wangIndex+1) else name 
+
+    ///Removes leading numbers from file and dir paths (e.g. /2222-dirname/1234-file.html -> /dirname/file.html).
+    let deNumberWangPath (path:string) =
+        //Example:
+        //This -> "developer\0100-introduction\0075-enticify-connector-for-commerce-server.md"
+        //Becomes this -> "developer\introduction\enticify-connector-for-commerce-server.md"
+        path.Split(Path.dirSeparatorChars)
+        |> Seq.map deNumberWang 
+        |> Array.ofSeq
+        |> Path.combine
+
+
+    [<RequireQualifiedAccessAttribute>]
+    module Toc =
+
+        open System.IO
+        open FrontMatter
+
+        ///Represents a Table of Contents.
+        type Toc = { Name:string; Chapters:list<Chapter>; Path:RootedPath; }
+        and Chapter = { Headings:list<Heading> }
+        and Heading = { Href:string; Title:string; EnableLink: bool; }
+
+        ///Creates an AHead for from a file.
+        let maybeHeadingFromRootedPath sitePath = 
+            Some( { Heading.Href = "TBD"; Title = "TBD"; EnableLink = true; } )
+
+        ///Creates a TOC for files in the given site path.
+        let forPath (path:RootedPath) name = 
+
+            let tocSectionDirs = Directory.GetDirectories(path.AbsolutePath)
+
+            let chaptersWithAtLeastOneHeading = 
+                [
+                    for tocSectionDir in tocSectionDirs do
+
+                        let headings = 
+                            Dir.getFiles tocSectionDir
+                            |> Seq.map (fun filePath -> path.RelativeRootedPath(filePath)) 
+                            |> Seq.choose maybeHeadingFromRootedPath 
+                            |> List.ofSeq
+
+                        if headings.Length > 0 then
+                            yield { Chapter.Headings = headings }
+                ]
+
+            { 
+                Path = path;
+                Toc.Name = name;
+                Chapters = chaptersWithAtLeastOneHeading;
+            }

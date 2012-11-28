@@ -65,6 +65,7 @@ module Program =
 
             //List the transformers.
             let transformers = [
+                liquidContentTransformer
                 markdownTransformer
                 (layoutTransformer (srcRelativePath [ "_layouts" ]))
                 ]
