@@ -40,7 +40,7 @@ module Program =
 
             //Set up some default functions/values.
             let srcRelativePath parts = Path.Combine(srcPath :: parts |> Array.ofList)
-            let runPreviewServer = fun () -> FireflyServer.runPreviewServer srcPath options.PreviewServerPort
+            let runPreviewServer = fun () -> FireflyServer.runPreviewServer destPath options.PreviewServerPort
                 
             let (siteMeta:MetaMap) = Map.empty
 
@@ -80,10 +80,12 @@ module Program =
                 match output with
 
                 | TextOutput(toi) ->
+                    Dir.ensureDir toi.Path.AbsolutePath
                     use r = toi.ReaderF()
                     File.WriteAllText(toi.Path.AbsolutePath, r.ReadToEnd())//Change to stream write.
 
                 | BinaryOutput(b) ->
+                    Dir.ensureDir b.Path.AbsolutePath
                     use fs = File.Create(b.Path.AbsolutePath)
                     use s = b.StreamF()
                     s.CopyTo(fs)

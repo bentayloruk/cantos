@@ -7,17 +7,24 @@ module TemplateTransformers =
     open System.IO
         
     let liquidTransform (meta:MetaMap) (templateReader:TextReader) =
-        let hash = 
-            let hash = Hash()
-            meta
-            |> Map.iter (fun key value ->
-                let add x = hash.Add(key, x)
-                match value with
-                | String(s) -> add s
-                | Int(i) -> add i 
-                | List(l) -> raiseNotImpl "Need to recursively map.")
-            hash
 
+        //Review:  Recursively convert the meta values to a hash that dotliquid likes.
+        let rec toHash value : obj = 
+            match value with
+            | Mapping(map) ->
+                let hash = Hash()
+                map
+                |> Seq.iter (fun kvp -> hash.Add(kvp.Key, toHash kvp.Value))
+                hash :> obj
+            | String(s) -> s :> obj
+            | Int(i) -> i :> obj
+            | List(l) -> 
+                l
+                |> Seq.map (fun item -> toHash item)
+                |> List.ofSeq
+                :> obj
+
+        let hash = (toHash (MetaValue.Mapping(meta))) :?> Hash
         let template = Template.Parse(templateReader.ReadToEnd())
         new StringReader(template.Render(hash))
 

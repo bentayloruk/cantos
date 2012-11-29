@@ -28,33 +28,39 @@ module FrontMatter =
     let metaValues frontMatterBlock : MetaMap =
         let yamlDoc = sprintf "---\n%s\n..." frontMatterBlock.Text
         let docs = yamlDocs yamlDoc
-        if docs.Count <> 1 then raiseNotImpl "We only support one front matter yaml document."
+        if docs.Count <> 1 then raiseNotImpl "We only support a single yaml document at the moment."
 
+        //The root node MUST be a YamlMappingNode.
         match docs.[0].RootNode with 
 
         | null -> Map.empty 
 
         | :? YamlMappingNode as mappingNode -> 
 
-            [ for child in mappingNode.Children do
+            let rec mapToMeta (node:YamlNode) =
+                match node with 
+                | :? YamlMappingNode as n ->
 
-                //TODO make these conversions active patterns.
-                //TODO properly type scalars - https://github.com/bentayloruk/cantos/issues/8 
-                //MAYBE make this recursive for nested yaml?
-                match child.Key, child.Value with
+                    let map =
+                        [ for child in mappingNode.Children do
 
-                | (:? YamlScalarNode as key), (:? YamlScalarNode as value) -> 
-                    let t = value.Value.GetType()
-                    yield (key.ToString().ToLower()), MetaValue.String(value.ToString())
+                            //TODO make these conversions active patterns.
+                            //TODO properly type scalars - https://github.com/bentayloruk/cantos/issues/8 
+                            match child.Key with
+                            | (:? YamlScalarNode as key) -> yield (key.ToString().ToLower(), mapToMeta child.Value)
+                            | (_) -> raiseNotImpl "We only support Yaml scalar types in Yaml maps." 
+                        ]
+                        |> Map.ofSeq
+                    MetaValue.Mapping(map)
+                | :? YamlScalarNode as n -> MetaValue.String(n.Value)
+                | :? YamlSequenceNode as n ->
+                    let metaValues = n |> Seq.map mapToMeta |> List.ofSeq
+                    MetaValue.List(metaValues)
+                | x -> raiseNotImpl <| sprintf "Not implemented mapping for YamlNode type %s." (x.GetType().ToString())
 
-                | (:? YamlScalarNode as key), (:? YamlSequenceNode as value) -> 
-                    let values = value |> Seq.map (fun node -> MetaValue.String(node.ToString())) |> List.ofSeq//TODO this is a hack as may not all be Scalar nodes.
-                    yield (key.ToString().ToLower()), MetaValue.List(values)
-
-                | (_, _) ->
-                    raiseNotImpl "We only have support for simple Yaml key value pairs (YamlScalarNode to YamlScalarNode) at the moment." 
-
-            ] |> Map.ofSeq
+            match mapToMeta mappingNode with
+            | MetaValue.Mapping(map) -> map 
+            | _ -> raiseInvalidOp "Should be a map."
 
         | _ -> Map.empty //Some as yet unsupported YamlNodeType.
 

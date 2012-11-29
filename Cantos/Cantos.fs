@@ -16,9 +16,9 @@ type DirectoryExclusion = Exclusion<DirectoryInfo>
 type FileExclusion = Exclusion<FileInfo> 
 
 //Output meta data types.
-type MetaValue = | String of string | Int of int | List of list<MetaValue>
 type MetaKey = string
-type MetaMap = Map<MetaKey, MetaValue>
+and MetaMap = Map<MetaKey, MetaValue>
+and MetaValue = | String of string | Int of int | List of list<MetaValue> | Mapping of MetaMap
     
 [<AutoOpen>]
 module Meta = 
