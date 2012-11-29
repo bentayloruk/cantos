@@ -40,6 +40,7 @@ module Program =
 
             //Set up some default functions/values.
             let srcRelativePath parts = Path.Combine(srcPath :: parts |> Array.ofList)
+            let srcRelativeRootedPath parts = RootedPath.Create(srcPath, Path.Combine(parts |> Array.ofList))
             let runPreviewServer = fun () -> FireflyServer.runPreviewServer destPath options.PreviewServerPort
                 
             let (siteMeta:MetaMap) = Map.empty
@@ -60,11 +61,16 @@ module Program =
             let siteMeta, outputs = run generators [] Map.empty 
             let outputs = outputs |> List.ofSeq //As we want siteMeta fully built!
 
+            //TODO decide if this is the best way to do TOC.
+            //Add some toc meta.  
+            let siteMeta, outputs = tocMeta (srcRelativeRootedPath [ "BookA" ]) siteMeta outputs
+            let siteMeta, outputs = tocMeta (srcRelativeRootedPath [ "BookB" ]) siteMeta outputs
+
             //Clean output directory.
             Dir.cleanDir (fun di -> di.Name = ".git") destPath 
 
             //List the transformers.
-            let transformers = [
+            let transformers = [    
                 liquidContentTransformer
                 markdownTransformer
                 (layoutTransformer (srcRelativePath [ "_layouts" ]))

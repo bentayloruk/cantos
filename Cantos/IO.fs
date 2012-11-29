@@ -100,6 +100,8 @@ module Dir =
 
     open FileSystem
 
+    let getDirs path = fs.Directory.GetDirectories(path)
+
     ///Get seq of descendant dir paths excluding those that match the filter.
     let rec descendantDirs path exclude =
 

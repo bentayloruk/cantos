@@ -75,6 +75,17 @@ type Output =
         | TextOutput(toi) -> TextOutput(toi.DecorateReader f)
         | _ -> x//Not text.
 
+    member x.GetPath() =
+        match x with
+        | TextOutput(toi) -> toi.Path 
+        | BinaryOutput(x) -> x.Path
+
+    member x.ChangePath(f) =
+        match x with
+        | TextOutput(x) -> TextOutput { x with Path = f(x.Path) }
+        | BinaryOutput(x) -> BinaryOutput { x with Path = f(x.Path) }
+        
+
 module Seq = 
     let mapTextOutput outputs = outputs |> Seq.choose
 

@@ -55,6 +55,7 @@ module Generators =
         let posts =
             dirOutputs postsPath siteOutPath
             |> Seq.map toBlogPost
+            //|> Seq.filter metaPublished
             |> List.ofSeq//As we want counts etc for meta. 
 
         //Place holder for creating posts meta hash.
@@ -63,26 +64,8 @@ module Generators =
         siteMeta, posts :> seq<Output> 
 
 ///Used to create one or more books in the site.
+[<AutoOpen>]
 module BookGenerator =
-
-    ///Removes leading numbers and -.  Example:  1010-myname -> myname.  
-    let deNumberWang (name:string) =
-        let wangIndex = name.IndexOf('-')
-        if wangIndex = -1 then name else
-            let maybeNumber = name.Substring(0, wangIndex)
-            let (parsed, number) = System.Int32.TryParse(maybeNumber)
-            if parsed = true then name.Substring(wangIndex+1) else name 
-
-    ///Removes leading numbers from file and dir paths (e.g. /2222-dirname/1234-file.html -> /dirname/file.html).
-    let deNumberWangPath (path:string) =
-        //Example:
-        //This -> "developer\0100-introduction\0075-enticify-connector-for-commerce-server.md"
-        //Becomes this -> "developer\introduction\enticify-connector-for-commerce-server.md"
-        path.Split(Path.dirSeparatorChars)
-        |> Seq.map deNumberWang 
-        |> Array.ofSeq
-        |> Path.combine
-
 
     [<RequireQualifiedAccessAttribute>]
     module Toc =
@@ -123,3 +106,38 @@ module BookGenerator =
                 Toc.Name = name;
                 Chapters = chaptersWithAtLeastOneHeading;
             }
+
+    ///Removes leading numbers and -.  Example:  1010-myname -> myname.  
+    let deNumberWang (name:string) =
+        let wangIndex = name.IndexOf('-')
+        if wangIndex = -1 then name else
+            let maybeNumber = name.Substring(0, wangIndex)
+            let (parsed, number) = System.Int32.TryParse(maybeNumber)
+            if parsed = true then name.Substring(wangIndex+1) else name 
+
+    ///Removes leading numbers from file and dir paths (e.g. /2222-dirname/1234-file.html -> /dirname/file.html).
+    let deNumberWangPath (path:string) =
+        //Example:
+        //This -> "developer\0100-introduction\0075-enticify-connector-for-commerce-server.md"
+        //Becomes this -> "developer\introduction\enticify-connector-for-commerce-server.md"
+        path.Split(Path.dirSeparatorChars)
+        |> Seq.map deNumberWang 
+        |> Array.ofSeq
+        |> Path.combine
+
+    let deNumberWangRelativePath (path:RootedPath) =
+        let rel = path.RelativePath
+        path.SwitchRelative(deNumberWangPath rel)
+
+    ///Generates blog post output.
+    let tocMeta (bookPath:RootedPath) (siteMeta:MetaMap) (outputs:seq<Output>) = 
+        let outputs =
+            outputs
+            |> Seq.map (fun output -> 
+                let path = output.GetPath()
+                if bookPath.IsSameRelativePathOrParent(path) then
+                    output.ChangePath(deNumberWangRelativePath)
+                else output
+                )
+        siteMeta, outputs
+
