@@ -9,16 +9,30 @@ Home of the main Cantos types
 
 //Types used to control Cantos behaviour.
 
+
+type ITracer =
+    abstract member Error : string -> unit
+    abstract member Info : string -> unit
+    abstract member Warning : string -> unit
+
+//Output meta data types.
+type MetaKey = string
+and MetaMap = Map<MetaKey, MetaValue>
+and MetaValue = | String of string | Int of int | List of list<MetaValue> | Mapping of MetaMap | Object of obj
+
+type Site = 
+    { InPath:RootedPath
+      OutPath:RootedPath
+      Meta:MetaMap
+      Tracer:ITracer
+      }
+
 //Exclusions.
 type Exclusion<'a> = 'a -> bool
 type UriExclusion = Exclusion<Uri> 
 type DirectoryExclusion = Exclusion<DirectoryInfo> 
 type FileExclusion = Exclusion<FileInfo> 
 
-//Output meta data types.
-type MetaKey = string
-and MetaMap = Map<MetaKey, MetaValue>
-and MetaValue = | String of string | Int of int | List of list<MetaValue> | Mapping of MetaMap
     
 [<AutoOpen>]
 module Meta = 
@@ -85,13 +99,22 @@ type Output =
         | TextOutput(x) -> TextOutput { x with Path = f(x.Path) }
         | BinaryOutput(x) -> BinaryOutput { x with Path = f(x.Path) }
         
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+[<AutoOpen>]
+[<RequireQualifiedAccess>]
+module Output =
+
+    let mapText f o = 
+        match o with
+        | TextOutput(x) -> TextOutput(f x)
+        | BinaryOutput(_) -> o 
 
 module Seq = 
     let mapTextOutput outputs = outputs |> Seq.choose
 
     
-type Generator = MetaMap -> MetaMap * seq<Output> 
-type Transformer = Output -> Output
+type Generator = Site -> MetaMap * seq<Output> 
+type Transformer = Site -> Output -> Output
 
 
 ///Template types.
@@ -99,10 +122,6 @@ type TemplateName = string
 type TemplateInfo = { FileName:string; Template:string; Meta:MetaMap } 
 type TemplateMap = Map<TemplateName, TemplateInfo>
 
-type ITracer =
-    abstract member Error : string -> unit
-    abstract member Info : string -> unit
-    abstract member Warning : string -> unit
 
 type ConsoleTracer() =
     let write (msg:string) = System.Console.WriteLine(msg)

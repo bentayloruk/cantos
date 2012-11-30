@@ -16,6 +16,7 @@ module TemplateTransformers =
                 map
                 |> Seq.iter (fun kvp -> hash.Add(kvp.Key, toHash kvp.Value))
                 hash :> obj
+            | Object(o) -> o
             | String(s) -> s :> obj
             | Int(i) -> i :> obj
             | List(l) -> 
@@ -37,7 +38,7 @@ module MarkdownTransformer =
     open System
 
     ///Turns a markdown stream into and html stream.  Returns a new Uri with .html extension.
-    let markdownTransformer (output:Output) = 
+    let markdownTransformer (site:Site) (output:Output) = 
         
         if output.HasExtension(["md";"markdown";]) then
 
@@ -58,7 +59,7 @@ module ContentTransformer =
     
     ///Transforms the content out output using the Liquid templating engine.
     ///Does not render templates (this allows content post processing with other transformers).
-    let liquidContentTransformer (output:Output) =
+    let liquidContentTransformer (site:Site) (output:Output) =
         //TODO create the hash.
         let f = liquidTransform Map.empty
         output.DecorateTextOutputReader(f)
@@ -71,22 +72,21 @@ module LayoutTransformer =
     open System.Collections.Generic
     open System
 
-    //Just playin.
-    let (|FileNameWithoutExt|) (path:RootedPath) = Path.GetFileNameWithoutExtension(path.AbsolutePath).ToLower()
-
     ///Transforms outputs that have "layout" meta.
-    let layoutTransformer layoutPath (output:Output) =
+    let layoutTransformer layoutDir (site:Site) (output:Output) =
 
+        let layoutPath = site.InPath.CreateFeaturePath(layoutDir)
         ///Create a map of layouts below sourcePath.
         //TODO make it easier to get files with front matter.  This is too much mess.
         let templateMap =
-            getDescendantFileInfos appDirExclusions tempFileExclusions layoutPath
-            |> Seq.map (getOutputForFileInfo layoutPath layoutPath)
+            getFileInfos layoutPath.AbsolutePath
+            |> Seq.map (fun fi -> getOutput (layoutPath.CreateRelative(fi.Name)) fi)
             |> Seq.choose (fun output ->
                 match output with
-                | TextOutput({ Path = FileNameWithoutExt(name); ReaderF = reader; HadFrontMatter = _; Meta = meta}) ->
-                    use r = reader()
-                    Some(name, { FileName = name ; Meta = meta; Template = r.ReadToEnd()} )
+                | TextOutput(x) ->
+                    let name = Path.GetFileNameWithoutExtension(x.Path.AbsolutePath)
+                    use r = x.ReaderF()
+                    Some(name, { FileName = name ; Meta = x.Meta; Template = r.ReadToEnd()} )
                 | BinaryOutput(_) -> None )
             |> Map.ofSeq
 

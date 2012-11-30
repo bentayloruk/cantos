@@ -22,7 +22,7 @@ let ``RelativeRootedPath works with absolute path`` () =
     test
         <@
             let sitePath = RootedPath.Create(@"c:\site\", @"docs\ben")
-            let fileRootedPath = sitePath.RelativeRootedPath(@"c:\site\docs\ben\chap1\file.html")
+            let fileRootedPath = sitePath.CreateRelative(@"c:\site\docs\ben\chap1\file.html")
             fileRootedPath.RootUrl = "/docs/ben/chap1/file.html"
         @>
 
@@ -31,7 +31,7 @@ let ``RelativeRootedPath works with relative path`` () =
     test
         <@
             let sitePath = RootedPath.Create(@"c:\site\", @"docs\ben")
-            let fileRootedPath = sitePath.RelativeRootedPath(@"chap1\file.html")
+            let fileRootedPath = sitePath.CreateRelative(@"chap1\file.html")
             fileRootedPath.RootUrl = "/docs/ben/chap1/file.html"
         @>
 

@@ -34,9 +34,14 @@ module Program =
         tracer.Info <| sprintf "Cantos started %s." (DateTime.Now.ToString())
 
         try 
-            //For now, if we have one arg, it is the path to the site source.
+            //TODO config/options is bit of mess.  Clean this up when trying fsx approach.
             let options = optionsFromArgs argv;
             let srcPath, destPath = options.SourcePath, options.DestinationPath
+            let site =
+                { InPath = RootedPath.Create(srcPath, "")
+                  OutPath = RootedPath.Create(destPath, "")
+                  Tracer = tracer
+                  Meta = Map.empty }
 
             //Set up some default functions/values.
             let srcRelativePath parts = Path.Combine(srcPath :: parts |> Array.ofList)
@@ -47,24 +52,22 @@ module Program =
 
             //List generators.
             let (generators:list<Generator>) = [
-                (siteOutputs srcPath destPath)
-                (blogOutputs (srcRelativePath [ "_posts" ]) destPath)
+                siteOutputs
+                (blogOutputs "_posts")
+                (bookOutputs "_books")
                 ]
 
             //Apply generators.
-            let rec run generators outputs meta =   
+            let rec run generators outputs site =   
                 match generators with
                 | h::t ->
-                    let m, o = h meta
-                    run t (Seq.append outputs o)  m
-                | [] -> meta, outputs
-            let siteMeta, outputs = run generators [] Map.empty 
+                    let meta, o = h site 
+                    //We update site with returned meta as we don't want generators messing with read only paths!
+                    let site = { site with Site.Meta = meta} 
+                    run t (Seq.append outputs o) site 
+                | [] -> site, outputs
+            let siteMeta, outputs = run generators [] site
             let outputs = outputs |> List.ofSeq //As we want siteMeta fully built!
-
-            //TODO decide if this is the best way to do TOC.
-            //Add some toc meta.  
-            let siteMeta, outputs = tocMeta (srcRelativeRootedPath [ "BookA" ]) siteMeta outputs
-            let siteMeta, outputs = tocMeta (srcRelativeRootedPath [ "BookB" ]) siteMeta outputs
 
             //Clean output directory.
             Dir.cleanDir (fun di -> di.Name = ".git") destPath 
@@ -73,14 +76,16 @@ module Program =
             let transformers = [    
                 liquidContentTransformer
                 markdownTransformer
-                (layoutTransformer (srcRelativePath [ "_layouts" ]))
+                (layoutTransformer "_layouts")
                 ]
 
             //Transform and write!
             for output in outputs do
 
                 //Transform
-                let output = transformers |> List.fold (fun acc proc -> proc acc) output 
+                let output =
+                    transformers
+                    |> List.fold (fun x f -> f site x) output 
 
                 //Write
                 match output with

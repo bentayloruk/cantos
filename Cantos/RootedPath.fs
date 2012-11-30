@@ -34,8 +34,13 @@ type RootedPath private (rootPart, relativePart) =
         if relativePart = rootedPath.RelativePath then true
         else rootedPath.RelativePath.StartsWith(relativePart)
         
+    //Used for feature folders like _books.  Clumsy and needs a tidy up.
+    member x.CreateFeaturePath(path) =
+        if x.RelativePath.Length > 0 then raiseInvalidOp "Only call on the true site root (i.e. a rooted path with no relative part)."
+        RootedPath(Path.Combine(x.AbsolutePath, path), "")
+        
     ///Creates a RootedPath from path.  path must be a descendant of this RootedPath instance.
-    member x.RelativeRootedPath(path) =
+    member x.CreateRelative(path) =
         if Path.IsPathRooted(path) then
             let expectedParentPath = path.Substring(0, absolutePath.Length)
             if absolutePath <> expectedParentPath then
@@ -50,11 +55,14 @@ type RootedPath private (rootPart, relativePart) =
         let relativeUrl = relativePart.Replace(Path.DirectorySeparatorChar, '/').Replace(Path.AltDirectorySeparatorChar, '/')
         "/" + relativeUrl //rooted url
 
+        (*
+        //Don't think I need this anymore.
     member x.SwitchRoot(newRootPath) =
         if Path.IsPathRooted(newRootPath) then
             RootedPath(newRootPath, relativePart)
         else
             raiseArgEx "Provide a rooted path." "path"
+            *)
 
     member x.SwitchRelative(newRelativePath) =
         RootedPath(rootPart, newRelativePath)
