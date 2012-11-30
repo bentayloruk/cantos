@@ -28,7 +28,7 @@ module Generators =
                         yield fi, fi.Name :: parts |> List.rev |> Array.ofList
 
                 for dir in Directory.GetDirectories(path) do
-                    let dirInfo = new System.IO.DirectoryInfo(dir)
+                    let dirInfo = new DirectoryInfo(dir)
                     if not (exDir dirInfo) then
                         yield! descendantFiles dir exDir exFile (dirInfo.Name::parts)
             }
@@ -85,19 +85,6 @@ module BookGenerator =
             let maybeNumber = name.Substring(0, wangIndex)
             let (parsed, number) = System.Int32.TryParse(maybeNumber)
             if parsed = true then name.Substring(wangIndex+1) else name 
-
-    ///Removes leading numbers from file and dir paths (e.g. /2222-dirname/1234-file.html -> /dirname/file.html).
-    let deNumberWangPath (path:string) =
-        //Example:
-        //This -> "developer\0100-introduction\0075-enticify-connector-for-commerce-server.md"
-        //Becomes this -> "developer\introduction\enticify-connector-for-commerce-server.md"
-        path.Split(Path.dirSeparatorChars)
-        |> Array.map deNumberWang 
-        |> Path.combine
-
-    let deNumberWangRelativePath (path:RootedPath) =
-        let rel = path.RelativePath
-        path.SwitchRelative(deNumberWangPath rel)
 
     open System.IO
     open FrontMatter
