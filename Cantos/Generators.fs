@@ -19,6 +19,20 @@ module Generators =
     //Shadow the filtered version for now.
     let getFileInfos = getFileInfosEx tempFileExclusions
 
+    ///Gets all descendant files (bar filtered) and their relative path as an array of parts (inc. filename).
+    let rec descendantFiles path exDir exFile parts =
+        seq { 
+                for file in Directory.GetFiles(path) do
+                    let fi = FileInfo(file)
+                    if not (exFile fi) then
+                        yield fi, fi.Name :: parts |> List.rev |> Array.ofList
+
+                for dir in Directory.GetDirectories(path) do
+                    let dirInfo = new System.IO.DirectoryInfo(dir)
+                    if not (exDir dirInfo) then
+                        yield! descendantFiles dir exDir exFile (dirInfo.Name::parts)
+            }
+
     ///Creates an Ouput from the given FileInfo location.
     let getOutput outPath (fileInfo:FileInfo) =
         let path = fileInfo.FullName
@@ -32,27 +46,12 @@ module Generators =
 
     ///Generates the basic site content output.
     let siteOutputs (site:Site) = 
-
-        let rec descendantFiles path exDir exFile parts =
-            seq { 
-                    for file in Directory.GetFiles(path) do
-                        let fi = FileInfo(file)
-                        if not (exFile fi) then
-                            yield fi, fi.Name :: parts |> List.rev |> Array.ofList
-
-                    for dir in Directory.GetDirectories(path) do
-                        let dirInfo = new System.IO.DirectoryInfo(dir)
-                        if not (exDir dirInfo) then
-                            yield! descendantFiles dir exDir exFile (dirInfo.Name::parts)
-                }
-
         let outputs = 
             descendantFiles site.InPath.AbsolutePath appDirExclusions tempFileExclusions []
             |> Seq.map (fun (fi, parts) -> 
                 let path = site.OutPath.CreateRelative(Path.Combine(parts))
                 getOutput path fi
             )
-
         site.Meta, outputs//dirOutputsRec site.InPath.AbsolutePath site.OutPath
 
     let toBlogPost (output:Output) = output
@@ -120,48 +119,36 @@ module BookGenerator =
         
         let bookRootPath = site.OutPath.CreateRelative(dirPathConvention path)
 
-        let outputs = 
-            //Get chapters...
-            Dir.getDirs path
-            |> Seq.map (fun chapterPath ->
-                let chapterDir = deNumberWang (DirectoryInfo(chapterPath).Name)
-                //Get pages...
-                getFileInfos chapterPath
-                |> Seq.map (fun fi ->
-                    let outPath = Path.Combine(chapterDir, deNumberWang fi.Name) 
-                    let outPath = bookRootPath.CreateRelative(outPath)
-                    getOutput outPath fi) 
-                )
-            |> Seq.concat
+        //Get chapters...
+        Dir.getDirs path
+        |> Seq.map (fun chapterPath ->
+            let chapterDir = deNumberWang (DirectoryInfo(chapterPath).Name)
+            //Get pages...
+            getFileInfos chapterPath
+            |> Seq.map (fun fi ->
+                let outPath = Path.Combine(chapterDir, deNumberWang fi.Name) 
+                let outPath = bookRootPath.CreateRelative(outPath)
+                getOutput outPath fi) 
+            )
+        |> Seq.concat
             
-            (*
-        //Generate output for child TextOutput files of all child dirs.
-        let chapterDirs = Dir.getDirs path
-        let chapterOutputs = seq {
-                for chapterDir in chapterDirs do
-                    //Get output relative path...
-                    yield! dirOutputs chapterDir bookRootPath 
-                }
-                *)
-        outputs
+        //TODO put the TOC stuff back.
+        (*
+        let headings = 
 
+            Dir.getFiles chapterDir
+            |> Seq.map (fun filePath -> path.RelativeRootedPath(filePath)) 
+            |> Seq.choose maybeHeadingFromRootedPath 
+            |> List.ofSeq
 
-            (*
-            let headings = 
+        if headings.Length > 0 then
+            yield { Chapter.Headings = headings }
 
-                Dir.getFiles chapterDir
-                |> Seq.map (fun filePath -> path.RelativeRootedPath(filePath)) 
-                |> Seq.choose maybeHeadingFromRootedPath 
-                |> List.ofSeq
-
-            if headings.Length > 0 then
-                yield { Chapter.Headings = headings }
-
-            { 
-                Path = path;
-                Chapters = chaptersWithAtLeastOneHeading;
-            }
-            *)
+        { 
+            Path = path;
+            Chapters = chaptersWithAtLeastOneHeading;
+        }
+        *)
 
     ///Generates blog post output.
     let bookOutputs dirName (site:Site) = 
@@ -174,26 +161,4 @@ module BookGenerator =
         else
             site.Tracer.Error(sprintf "Books generator is configured but path does not exist.  Looking in: %s" path.AbsolutePath)
             site.Meta, Seq.empty
-            (*
-        //let toc = Toc.forPath booksPath 
-
-        Dir.getDirs booksPath
-        |> 
-        //Get book folders
-        //Parse folder name for output relative path.
-        //Build toc.
-        //Add toc
-        let outputs =
-            outputs
-            |> Seq.map (fun output -> 
-                let path = output.GetPath()
-                if bookPath.IsSameRelativePathOrParent(path) then
-                    let output = output.ChangePath(deNumberWangRelativePath)
-                    match output with 
-                    | TextOutput(x) -> TextOutput({ x with Meta = x.Meta.Add("toc", MetaValue.Object(toc))} )
-                    | _ -> output
-                else output
-                )
-        siteMeta, outputs
-        *)
 
