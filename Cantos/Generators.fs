@@ -90,7 +90,7 @@ module BookGenerator =
     open FrontMatter
 
     ///Represents a Table of Contents.
-    type Toc = { Chapters:list<Chapter>; Path:RootedPath; }
+    type Toc = { Chapters:list<Chapter>; }
     and Chapter = { Headings:list<Heading> }
     and Heading = { Href:string; Title:string; EnableLink: bool; }
 
@@ -105,37 +105,44 @@ module BookGenerator =
     let toBookOutputs (path:string) (site:Site) = 
         
         let bookRootPath = site.OutPath.CreateRelative(dirPathConvention path)
+        let chapterDirs = Dir.getDirs path |> List.ofArray
+        let toc = { Chapters = [] }
 
-        //Get chapters...
-        Dir.getDirs path
-        |> Seq.map (fun chapterPath ->
-            let chapterDir = deNumberWang (DirectoryInfo(chapterPath).Name)
-            //Get pages...
-            getFileInfos chapterPath
-            |> Seq.map (fun fi ->
-                let outPath = Path.Combine(chapterDir, deNumberWang fi.Name) 
-                let outPath = bookRootPath.CreateRelative(outPath)
-                getOutput outPath fi) 
-            )
-        |> Seq.concat
-            
-        //TODO put the TOC stuff back.
-        (*
-        let headings = 
+        let makeBook dirs = 
 
-            Dir.getFiles chapterDir
-            |> Seq.map (fun filePath -> path.RelativeRootedPath(filePath)) 
-            |> Seq.choose maybeHeadingFromRootedPath 
-            |> List.ofSeq
+            let chapterOutputs = 
 
-        if headings.Length > 0 then
-            yield { Chapter.Headings = headings }
+                let rec inner dirs acc = 
+                    match dirs with
 
-        { 
-            Path = path;
-            Chapters = chaptersWithAtLeastOneHeading;
-        }
-        *)
+                    | dir::t ->
+                            let chapterDir = deNumberWang (DirectoryInfo(dir).Name)
+
+                            let outputs, headings =
+                                getFileInfos dir 
+                                |> Seq.fold (fun (outputs, headings) fi ->
+                                    let outPath = Path.Combine(chapterDir, deNumberWang fi.Name) 
+                                    let outPath = bookRootPath.CreateRelative(outPath)
+                                    let output = getOutput outPath fi
+                                    let heading = { Href = ""; Title = "Woot!"; EnableLink = true }
+                                    //TODO don't add chapters with no headings?
+                                    (output::outputs, heading::headings)
+                                    ) ([], [])
+
+                            let chapter = { Headings = headings |> List.rev }
+                            let chapterOuputs = outputs |> List.rev
+                            inner t ((chapter, chapterOuputs)::acc)
+
+                    | [] -> acc
+                    
+                inner dirs []
+
+            let chapterOutputs = chapterOutputs |> List.rev
+            seq { for chap, outs in chapterOutputs do yield! outs }
+            //TODO add chapter to it's outputs.
+            //TODO add Toc to all outputs.
+
+        makeBook chapterDirs
 
     ///Generates blog post output.
     let bookOutputs dirName (site:Site) = 
