@@ -90,7 +90,7 @@ module BookGenerator =
     open FrontMatter
 
     ///Represents a Table of Contents.
-    type Toc = { Chapters:list<Chapter>; Path:RootedPath; }
+    type Toc = { Chapters:list<Chapter>; }
     and Chapter = { Headings:list<Heading> }
     and Heading = { Href:string; Title:string; EnableLink: bool; }
 
@@ -100,42 +100,65 @@ module BookGenerator =
 
     ///Get dir structure from dotted directory name.
     let dirPathConvention path = DirectoryInfo(path).Name.Split('.') |> Path.combine
+        
+    let tryGetHeading output =
+        match output with 
+        | TextOutput(x) ->
+            let shouldLink = (|BoolValueD|) "toc-link" true x.Meta
+            match x.Meta with
+            | StringValue "toc-title" t
+            | StringValue "title" t ->
+                Some({ Href = x.Path.RootUrl; Title = t; EnableLink = shouldLink })
+            | _ -> None
+            
+        | BinaryOutput(_) -> None
 
     ///Creates a TOC for files in the given site path.
     let toBookOutputs (path:string) (site:Site) = 
         
         let bookRootPath = site.OutPath.CreateRelative(dirPathConvention path)
+        let chapterDirs = Dir.getDirs path |> List.ofArray
 
-        //Get chapters...
-        Dir.getDirs path
-        |> Seq.map (fun chapterPath ->
-            let chapterDir = deNumberWang (DirectoryInfo(chapterPath).Name)
-            //Get pages...
-            getFileInfos chapterPath
-            |> Seq.map (fun fi ->
-                let outPath = Path.Combine(chapterDir, deNumberWang fi.Name) 
-                let outPath = bookRootPath.CreateRelative(outPath)
-                getOutput outPath fi) 
-            )
-        |> Seq.concat
-            
-        //TODO put the TOC stuff back.
-        (*
-        let headings = 
+        let makeBook dirs = 
+            let chapterOutputs = 
+                let rec inner dirs acc = 
+                    match dirs with
 
-            Dir.getFiles chapterDir
-            |> Seq.map (fun filePath -> path.RelativeRootedPath(filePath)) 
-            |> Seq.choose maybeHeadingFromRootedPath 
-            |> List.ofSeq
+                    | dir::t ->
+                            let chapterDir = deNumberWang (DirectoryInfo(dir).Name)
+                            let filesInChapterDir = getFileInfos dir
 
-        if headings.Length > 0 then
-            yield { Chapter.Headings = headings }
+                            let outputs, headings =
+                                filesInChapterDir
+                                |> Seq.fold (fun (outputs, headings) fi ->
+                                    let outPath = Path.Combine(chapterDir, deNumberWang fi.Name) 
+                                    let outPath = bookRootPath.CreateRelative(outPath)
+                                    let output = getOutput outPath fi
+                                    //TODO heading URL is wrong (as still has MD extension).  Should we hack or add after?
+                                    let heading = tryGetHeading output
+                                    let headings = if heading.IsSome then heading.Value::headings else headings
+                                    //TODO don't add chapters with no headings?
+                                    //TODO outputs includes non-page and binary files.  Does this break anything.
+                                    (output::outputs, headings)
+                                    ) ([], [])
 
-        { 
-            Path = path;
-            Chapters = chaptersWithAtLeastOneHeading;
-        }
-        *)
+                            let chapter = { Headings = headings |> List.rev }
+                            let chapterOuputs = outputs |> List.rev
+                            //chapterOuputs |> Seq.mapTextOutput (fun x -> { x with Meta = x.Meta.Add("chapter", MetaValue.Object(chapter)) }) 
+                            inner t ((chapter, chapterOuputs)::acc)
+
+                    | [] -> acc
+                    
+                inner dirs []
+
+            let chapterOutputs = chapterOutputs |> List.rev
+            let toc = { Chapters = chapterOutputs |> List.map (fun (chapter, _) -> chapter) |> List.ofSeq }
+            let allBookOutputs = seq { for chap, outs in chapterOutputs do yield! outs }
+            allBookOutputs |> Seq.mapTextOutput (fun o -> { o with Meta = o.Meta.Add("toc", MetaValue.Object(toc)) })
+            //TODO add chapter to it's outputs.
+            //TODO add Toc to all outputs.
+
+        makeBook chapterDirs
 
     ///Generates blog post output.
     let bookOutputs dirName (site:Site) = 

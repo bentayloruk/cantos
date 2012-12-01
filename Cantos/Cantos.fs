@@ -20,6 +20,30 @@ type MetaKey = string
 and MetaMap = Map<MetaKey, MetaValue>
 and MetaValue = | String of string | Int of int | List of list<MetaValue> | Mapping of MetaMap | Object of obj
 
+[<AutoOpen>]
+module Meta = 
+    //TODO should extend when MetaMap.  Look up constraints/declaration.
+    type Map<'a,'b> when 'a : comparison with
+        member x.tryGetValue(key) = 
+            if x.ContainsKey(key) then Some(x.[key]) else None
+        member x.join (q:Map<'a,'b>) = 
+            Map(Seq.concat [ (Map.toSeq x) ; (Map.toSeq q) ])
+
+    let (|StringValue|_|) key (meta:MetaMap) = 
+        let value = meta.tryGetValue key
+        match value with
+        | Some(MetaValue.String(x)) -> Some(x)
+        | _ -> None
+
+    let (|BoolValueD|) key def (meta:MetaMap) = 
+        let value = meta.tryGetValue key
+        match value with
+        | Some(MetaValue.String(x)) ->
+            let x = x.ToLower()
+            if x = "true" || x = "yes" then true
+            else false//Should use convertor and throw if rubbish value.
+        | _ -> def 
+
 type Site = 
     { InPath:RootedPath
       OutPath:RootedPath
@@ -35,13 +59,6 @@ type FileExclusion = Exclusion<FileInfo>
 
     
 [<AutoOpen>]
-module Meta = 
-    //TODO should extend when MetaMap.  Look up constraints/declaration.
-    type Map<'a,'b> when 'a : comparison with
-        member x.tryGetValue(key) = 
-            if x.ContainsKey(key) then Some(x.[key]) else None
-        member x.join (q:Map<'a,'b>) = 
-            Map(Seq.concat [ (Map.toSeq x) ; (Map.toSeq q) ])
             
 type Port = int
 
@@ -99,19 +116,11 @@ type Output =
         | TextOutput(x) -> TextOutput { x with Path = f(x.Path) }
         | BinaryOutput(x) -> BinaryOutput { x with Path = f(x.Path) }
         
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-[<AutoOpen>]
-[<RequireQualifiedAccess>]
-module Output =
-
-    let mapText f o = 
-        match o with
-        | TextOutput(x) -> TextOutput(f x)
-        | BinaryOutput(_) -> o 
-
 module Seq = 
-    let mapTextOutput outputs = outputs |> Seq.choose
 
+    ///Map f over TextOutputs.  Can we generalised this?
+    let mapTextOutput f (outputs:seq<Output>) =
+        outputs |> Seq.map (fun o -> match o with | TextOutput(x) -> TextOutput(f x) | BinaryOutput(_) -> o)
     
 type Generator = Site -> MetaMap * seq<Output> 
 type Transformer = Site -> Output -> Output

@@ -50,6 +50,8 @@ module Program =
                 
             let (siteMeta:MetaMap) = Map.empty
 
+            //TODO maybe get rid of generator concept.  Rather, provide generatos with writer transformers.
+            //Would this work?  Maybe not, as also need global state building.
             //List generators.
             let (generators:list<Generator>) = [
                 siteOutputs
