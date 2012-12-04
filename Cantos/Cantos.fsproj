@@ -51,11 +51,13 @@
     <Compile Include="Mime.fs" />
     <Compile Include="IO.fs" />
     <Compile Include="WebServer.fs" />
-    <Compile Include="RootedPath.fs" />
+    <Compile Include="Uri.fs" />
     <Compile Include="Cantos.fs" />
+    <Compile Include="Meta.fs" />
     <Compile Include="FrontMatter.fs" />
-    <Compile Include="Generators.fs" />
+    <Compile Include="Content.fs" />
     <Compile Include="Transformers.fs" />
+    <Compile Include="Generators.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
     <None Include="packages.config" />
