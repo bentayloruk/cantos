@@ -40,19 +40,19 @@ module FrontMatter =
             let rec mapToMeta (node:YamlNode) =
                 match node with 
                 | :? YamlMappingNode as n ->
-
                     let map =
                         [ for child in mappingNode.Children do
 
                             //TODO make these conversions active patterns.
-                            //TODO properly type scalars - https://github.com/bentayloruk/cantos/issues/8 
                             match child.Key with
                             | (:? YamlScalarNode as key) -> yield (key.ToString().ToLower(), mapToMeta child.Value)
                             | (_) -> raiseNotImpl "We only support Yaml scalar types in Yaml maps." 
                         ]
                         |> Map.ofSeq
                     MetaValue.Mapping(map)
-                | :? YamlScalarNode as n -> MetaValue.String(n.Value)
+                | :? YamlScalarNode as n ->
+                    //TODO properly type scalars - https://github.com/bentayloruk/cantos/issues/8
+                    MetaValue.String(n.Value)
                 | :? YamlSequenceNode as n ->
                     let metaValues = n |> Seq.map mapToMeta |> List.ofSeq
                     MetaValue.List(metaValues)
