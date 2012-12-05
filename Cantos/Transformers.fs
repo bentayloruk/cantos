@@ -1,14 +1,15 @@
 ﻿namespace Cantos
 
 [<AutoOpen>]
-module TemplateTransformers =
-
+module LiquidTransformer = 
+    
     open DotLiquid
     open System.IO
         
-    let liquidTransform (meta:MetaMap) (templateReader:TextReader) =
+    let liquidTransform meta (reader:TextReader) =
 
-        //Review:  Recursively convert the meta values to a hash that dotliquid likes.
+        //TODO join site meta to meta.
+        //TODO naive recusion.  Fix up.  Recursively convert the meta values to a hash that dotliquid likes.
         let rec toHash value : obj = 
             match value with
             | Mapping(map) ->
@@ -26,8 +27,15 @@ module TemplateTransformers =
                 :> obj
 
         let hash = (toHash (MetaValue.Mapping(meta))) :?> Hash
-        let template = Template.Parse(templateReader.ReadToEnd())
-        new StringReader(template.Render(hash))
+        let template = Template.Parse(reader.ReadToEnd())
+        new StringReader(template.Render(hash)) :> TextReader
+
+    ///Transforms the content out content using the Liquid templating engine.
+    ///Does not render templates (this allows content post processing with other transformers).
+    let liquidContentTransformer layouts (site:Site) (content:Content) =
+        match content with
+        | Meta meta & Text tc -> textTransform (liquidTransform meta) tc
+        | _ -> content
 
 ///Markdown conversion.
 [<AutoOpen>]
@@ -37,32 +45,18 @@ module MarkdownTransformer =
     open MarkdownDeep
     open System
 
-    ///Turns a markdown stream into and html stream.  Returns a new Uri with .html extension.
-    let markdownTransformer (site:Site) (output:Output) = 
+    ///Reads text content and converts it to Markdown.
+    let toMarkdown (reader:TextReader) =
+        let md = Markdown()
+        md.ExtraMode <- false
+        md.SafeMode <- false
+        let html = md.Transform(reader.ReadToEnd())
+        new StringReader(html)
+
+    ///Turns .md or .markdown files into html.
+    let markdownTransformer (site:Site) (content:Content) = 
+        matchTextTransform (|Markdown|_|) toMarkdown content
         
-        if output.HasExtension(["md";"markdown";]) then
-
-            let markdownTransform (reader:TextReader) =
-                let md = Markdown()
-                md.ExtraMode <- false
-                md.SafeMode <- false
-                let html = md.Transform(reader.ReadToEnd())
-                new StringReader(html)
-
-            let output = output.ChangeExtension("html")
-            output.DecorateTextOutputReader(markdownTransform)
-
-        else output
-        
-[<AutoOpen>]
-module ContentTransformer = 
-    
-    ///Transforms the content out output using the Liquid templating engine.
-    ///Does not render templates (this allows content post processing with other transformers).
-    let liquidContentTransformer (site:Site) (output:Output) =
-        //TODO create the hash.
-        let f = liquidTransform Map.empty
-        output.DecorateTextOutputReader(f)
 
 [<AutoOpen>]
 module LayoutTransformer = 
@@ -72,47 +66,55 @@ module LayoutTransformer =
     open System.Collections.Generic
     open System
 
-    ///Transforms outputs that have "layout" meta.
-    let layoutTransformer layoutDir (site:Site) (output:Output) =
-
-        let layoutPath = site.InPath.CreateFeaturePath(layoutDir)
+    let buildTemplateMap layoutPath = 
         ///Create a map of layouts below sourcePath.
         //TODO make it easier to get files with front matter.  This is too much mess.
-        let templateMap =
-            getFileInfos layoutPath.AbsolutePath
-            |> Seq.map (fun fi -> getOutput (layoutPath.CreateRelative(fi.Name)) fi)
-            |> Seq.choose (fun output ->
-                match output with
-                | TextOutput(x) ->
-                    let name = Path.GetFileNameWithoutExtension(x.Path.AbsolutePath)
-                    use r = x.ReaderF()
-                    Some(name, { FileName = name ; Meta = x.Meta; Template = r.ReadToEnd()} )
-                | BinaryOutput(_) -> None )
-            |> Map.ofSeq
+        childFilePathsEx layoutPath
+        |> Seq.map getContent
+        |> Seq.choose (function
+            | TextContent(x) ->
+                let name = x.Uri.FileNameWithoutExtension
+                use r = x.ReaderF()
+                Some(name, { FileName = name ; Meta = x.Meta; Template = r.ReadToEnd()} )
+            | BinaryContent(_) -> None )
+        |> Map.ofSeq
 
-        //TODO this code is not super readable.  Fix it up.
-        //Look for "layout" in meta.  Transform, then recurse looking for "layout" in the layout!
-        let rec recurseLayouts (meta:MetaMap) (output:TextOutputInfo) =
-            match meta.tryGetValue("layout") with
+        (*
+    ///Transforms contents that have "layout" meta.
+    let layoutTransformer layoutDir (site:Site) =
 
-            | Some(String(layoutName)) ->
-                match templateMap.tryGetValue(layoutName) with
+        let layoutMap = buildTemplateMap (site.InPath.CombineWithParts(layoutDir))
+        
+        //Return rest of computation, so we don't keep parsing template.
+        fun content ->
+            //TODO this code is not super readable.  Fix it up.
+            //Look for "layout" in meta.  Transform, then recurse looking for "layout" in the layout!
+            let rec recurseLayouts (meta:MetaMap) (content:TextContent) =
 
-                | Some(templateInfo) ->
-                    let mergedMeta = templateInfo.Meta.join(meta.Remove("layout"))
-                    let o = 
-                        output.DecorateReader(fun tr ->
-                            let meta = mergedMeta.Add("content", MetaValue.String(tr.ReadToEnd()))
-                            use templateReader = new StringReader(templateInfo.Template)
-                            liquidTransform meta templateReader)
+                match meta with
 
-                    recurseLayouts mergedMeta o 
+                | LayoutName(name) ->
 
-                | None -> output//Log!!
+                    match layoutMap.tryGetValue(name) with
 
-            | None | Some(_) -> output 
+                    | Some(templateInfo) ->
+
+                        let mergedMeta = templateInfo.Meta.join(meta.Remove("layout"))
+                        let o = 
+                            textTransform
+                            content.DecorateReader(fun tr ->
+                                let meta = mergedMeta.Add("content", MetaValue.String(tr.ReadToEnd()))
+                                use templateReader = new StringReader(templateInfo.Template)
+                                liquidTransform meta templateReader)
+
+                        recurseLayouts mergedMeta o 
+
+                    | None -> content//Log!!
+
+                | None | Some(_) -> content 
 
 
-        match output with
-        | TextOutput(toi) -> TextOutput(recurseLayouts toi.Meta toi) 
-        | _ -> output
+            match content with
+            | TextContent(toi) -> TextContent(recurseLayouts toi.Meta toi) 
+            | _ -> content
+            *)

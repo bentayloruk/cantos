@@ -74,7 +74,6 @@
     <Compile Include="TickFact.fs" />
     <Compile Include="Program.fs" />
     <Compile Include="FrontMatterTests.fs" />
-    <Compile Include="SitePathTests.fs" />
     <None Include="packages.config" />
     <None Include="App.config" />
     <Compile Include="StepDefinitions.fs" />

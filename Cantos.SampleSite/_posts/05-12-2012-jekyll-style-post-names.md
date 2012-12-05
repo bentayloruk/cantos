@@ -11,4 +11,4 @@ f: !!str Yes               # a string via explicit type
 g: Yes                     # a boolean True
 h: Yes we have No bananas  # a string, "Yes" and "No" disambiguated by context.
 ---
-Empty post.
+When using the _posts directory, Cantos supports Jekyll style post names.
