@@ -25,6 +25,8 @@ type Uri with
 
     member x.FileName = Path.GetFileName(x.LocalPath)
 
+    member x.FileNameWithoutExtension = Path.GetFileNameWithoutExtension(x.LocalPath)
+
     member x.WithExtension(extension) = Uri(Path.ChangeExtension(x.LocalPath, extension))
 
 

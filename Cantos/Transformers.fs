@@ -66,49 +66,55 @@ module LayoutTransformer =
     open System.Collections.Generic
     open System
 
-    (*
-    ///Transforms contents that have "layout" meta.
-    let layoutTransformer layoutDir (site:Site) (content:Content) =
-
-        let layoutPath = site.InPath.CreateFeaturePath(layoutDir)
+    let buildTemplateMap layoutPath = 
         ///Create a map of layouts below sourcePath.
         //TODO make it easier to get files with front matter.  This is too much mess.
-        let templateMap =
-            getFileInfos layoutPath.AbsolutePath
-            |> Seq.map (fun fi -> getContent fi.FullName (layoutPath.CreateRelative(fi.Name)))
-            |> Seq.choose (fun content ->
-                match content with
-                | TextContent(x) ->
-                    let name = Path.GetFileNameWithoutExtension(x.Path.AbsolutePath)
-                    use r = x.ReaderF()
-                    Some(name, { FileName = name ; Meta = x.Meta; Template = r.ReadToEnd()} )
-                | BinaryContent(_) -> None )
-            |> Map.ofSeq
+        childFilePathsEx layoutPath
+        |> Seq.map getContent
+        |> Seq.choose (function
+            | TextContent(x) ->
+                let name = x.Uri.FileNameWithoutExtension
+                use r = x.ReaderF()
+                Some(name, { FileName = name ; Meta = x.Meta; Template = r.ReadToEnd()} )
+            | BinaryContent(_) -> None )
+        |> Map.ofSeq
 
-        //TODO this code is not super readable.  Fix it up.
-        //Look for "layout" in meta.  Transform, then recurse looking for "layout" in the layout!
-        let rec recurseLayouts (meta:MetaMap) (content:TextContentInfo) =
-            match meta.tryGetValue("layout") with
+        (*
+    ///Transforms contents that have "layout" meta.
+    let layoutTransformer layoutDir (site:Site) =
 
-            | Some(String(layoutName)) ->
-                match templateMap.tryGetValue(layoutName) with
+        let layoutMap = buildTemplateMap (site.InPath.CombineWithParts(layoutDir))
+        
+        //Return rest of computation, so we don't keep parsing template.
+        fun content ->
+            //TODO this code is not super readable.  Fix it up.
+            //Look for "layout" in meta.  Transform, then recurse looking for "layout" in the layout!
+            let rec recurseLayouts (meta:MetaMap) (content:TextContent) =
 
-                | Some(templateInfo) ->
-                    let mergedMeta = templateInfo.Meta.join(meta.Remove("layout"))
-                    let o = 
-                        content.DecorateReader(fun tr ->
-                            let meta = mergedMeta.Add("content", MetaValue.String(tr.ReadToEnd()))
-                            use templateReader = new StringReader(templateInfo.Template)
-                            liquidTransform meta templateReader)
+                match meta with
 
-                    recurseLayouts mergedMeta o 
+                | LayoutName(name) ->
 
-                | None -> content//Log!!
+                    match layoutMap.tryGetValue(name) with
 
-            | None | Some(_) -> content 
+                    | Some(templateInfo) ->
+
+                        let mergedMeta = templateInfo.Meta.join(meta.Remove("layout"))
+                        let o = 
+                            textTransform
+                            content.DecorateReader(fun tr ->
+                                let meta = mergedMeta.Add("content", MetaValue.String(tr.ReadToEnd()))
+                                use templateReader = new StringReader(templateInfo.Template)
+                                liquidTransform meta templateReader)
+
+                        recurseLayouts mergedMeta o 
+
+                    | None -> content//Log!!
+
+                | None | Some(_) -> content 
 
 
-        match content with
-        | TextContent(toi) -> TextContent(recurseLayouts toi.Meta toi) 
-        | _ -> content
-    *)
+            match content with
+            | TextContent(toi) -> TextContent(recurseLayouts toi.Meta toi) 
+            | _ -> content
+            *)
