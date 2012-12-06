@@ -67,5 +67,4 @@ let runPreviewServer path (port:int) =
 
         ()
     let server = server.Create(requestHandler, port)
-    logInfo ("Running Firefly on port " + port.ToString())
     ()

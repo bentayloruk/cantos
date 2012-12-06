@@ -9,9 +9,12 @@ module Generators =
     open FrontMatter
     open System.Text.RegularExpressions
 
+    //Review: is this thing good or bad form?  I guess bad as hides the underlying function for all?
+    let liquidContentTransformer (site:Site) = liquidContentTransformer ["site", Mapping(site.Meta)]
+
     ///Copies all files from the site in path and transforms text files where it can.
     let generateBasicSite (site:Site) = 
-        let transform = (markdownTransformer site >> liquidContentTransformer Map.empty site)
+        let transform = markdownTransformer >> liquidContentTransformer site
         descendantFilePaths site.InPath
         |> Seq.map (getContent >> transform >> (outUriContent site))
 
@@ -26,7 +29,7 @@ module Generators =
         |> Seq.choose textContent
         |> Seq.choose (fun textContent ->
 
-            let content = textContent |> (markdownTransformer site >> liquidContentTransformer Map.empty site)
+            let content = textContent |> (markdownTransformer >> liquidContentTransformer site)
 
             match (getUri content) with
 

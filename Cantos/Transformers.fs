@@ -5,37 +5,55 @@ module LiquidTransformer =
     
     open DotLiquid
     open System.IO
+    open System.Collections.Generic
         
-    let liquidTransform meta (reader:TextReader) =
+        (*
+    type MetaDrop(meta:MetaMap) = 
+        inherit Drop()
+        override __.BeforeMethod(name) = 
+            let v = meta.tryGetValue name
+            //Review - do we need to wrap chlid maps in a drop too?
+            if v.IsSome then metaValueObj v.Value else null
+            *)
 
-        //TODO join site meta to meta.
-        //TODO naive recusion.  Fix up.  Recursively convert the meta values to a hash that dotliquid likes.
-        let rec toHash value : obj = 
-            match value with
-            | Mapping(map) ->
-                let hash = Hash()
-                map
-                |> Seq.iter (fun kvp -> hash.Add(kvp.Key, toHash kvp.Value))
-                hash :> obj
-            | Object(o) -> o
-            | String(s) -> s :> obj
-            | Int(i) -> i :> obj
-            | List(l) -> 
-                l
-                |> Seq.map (fun item -> toHash item)
-                |> List.ofSeq
-                :> obj
-
-        let hash = (toHash (MetaValue.Mapping(meta))) :?> Hash
+    let liquidTransform (hash:Hash) (reader:TextReader) =
         let template = Template.Parse(reader.ReadToEnd())
         new StringReader(template.Render(hash)) :> TextReader
 
     ///Transforms the content out content using the Liquid templating engine.
     ///Does not render templates (this allows content post processing with other transformers).
-    let liquidContentTransformer layouts (site:Site) (content:Content) =
+    let liquidContentTransformer namedMetas (content:Content) =
+
         match content with
-        | Meta meta & Text tc -> textTransform (liquidTransform meta) tc
+
+        | Meta meta & Text x ->
+
+            let metas = ("page", Mapping(meta))::namedMetas |> Map.ofSeq
+            let hash = Hash.FromDictionary(toDictionary metas)
+            textTransform (liquidTransform hash) x
+
         | _ -> content
+
+    (*
+            Hash.FromDictionary
+    //TODO join site meta to meta.
+    //TODO naive recusion.  Fix up.  Recursively convert the meta values to a hash that dotliquid likes.
+    let rec toHash value : obj = 
+        match value with
+        | Mapping(map) ->
+            let hash = Hash()
+            map
+            |> Seq.iter (fun kvp -> hash.Add(kvp.Key, toHash kvp.Value))
+            hash :> obj
+        | Object(o) -> o
+        | String(s) -> s :> obj
+        | Int(i) -> i :> obj
+        | List(l) -> 
+            l
+            |> Seq.map (fun item -> toHash item)
+            |> List.ofSeq
+            :> obj
+            *)
 
 ///Markdown conversion.
 [<AutoOpen>]
@@ -54,7 +72,7 @@ module MarkdownTransformer =
         new StringReader(html)
 
     ///Turns .md or .markdown files into html.
-    let markdownTransformer (site:Site) (content:Content) = 
+    let markdownTransformer (content:Content) = 
         matchTextTransform (|Markdown|_|) toMarkdown content
         
 

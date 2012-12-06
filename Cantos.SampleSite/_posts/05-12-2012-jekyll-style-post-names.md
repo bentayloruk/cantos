@@ -12,3 +12,5 @@ g: Yes                     # a boolean True
 h: Yes we have No bananas  # a string, "Yes" and "No" disambiguated by context.
 ---
 When using the _posts directory, Cantos supports Jekyll style post names.
+{{page.a}}
+{{page.b}}

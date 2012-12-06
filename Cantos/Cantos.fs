@@ -10,7 +10,12 @@ Home of the main Cantos types
 //Meta types.
 type MetaKey = string
 and MetaMap = Map<MetaKey, MetaValue>
-and MetaValue = | String of string | Int of int | List of list<MetaValue> | Mapping of MetaMap | Object of obj
+and MetaValue =
+    | String of string
+    | Int of int 
+    | List of list<MetaValue>
+    | Mapping of MetaMap 
+    | Object of obj
 
 [<System.Diagnostics.DebuggerDisplayAttribute("{Uri.LocalPath}")>]
 type TextContent =

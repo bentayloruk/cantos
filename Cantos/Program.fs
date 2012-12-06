@@ -25,6 +25,11 @@ module Program =
           PreviewServerPort = 8888
           }
 
+    let logStart site = 
+        logInfo "[ Cantos - F#st and furious static website generator ]"
+        logInfo (sprintf "InPath: %s" (site.InPath.ToString()))
+        logInfo (sprintf "OutPath: %s" (site.OutPath.ToString()))
+
     [<EntryPoint>]
     let main argv = 
 
@@ -43,12 +48,11 @@ module Program =
                 { InPath = Uri(srcPath)
                   OutPath = Uri(destPath)
                   Meta = Map.empty }
-                
+            
+            logStart site 
+
             //Clean output directory.
             Dir.cleanDir (fun di -> di.Name = ".git") destPath 
-
-            //TODO build the meta.
-            let (siteMeta:MetaMap) = Map.empty
 
             //Run generators.
             let generators = [ generateBlog; (*generateBooks;*) generateBasicSite; ]
@@ -56,10 +60,11 @@ module Program =
 
             //Write content.
             outputs |> Seq.iter writeContent
-            logSuccess (sprintf "Cantos success.  Wrote site to %s." destPath)
+            logSuccess (sprintf "Success.  Output written to:\n%s.\n" destPath)
 
             //Preview it!  //TODO preveiw based on cmd line flag.
             runPreviewServer() 
+            logInfo ("Hosting site at http://localhost:" + options.PreviewServerPort.ToString())
 
             let _ = Console.ReadLine()
             0
