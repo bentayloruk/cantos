@@ -3,13 +3,6 @@
 open System
 open System.IO
 
-type ConsoleTracer() =
-    let write (msg:string) = System.Console.WriteLine(msg)
-    interface ITracer with
-        member x.Error(msg) = write msg
-        member x.Info(msg) = write msg
-        member x.Warning(msg) = write msg
-
 module Program =
 
     ///App options.
@@ -40,9 +33,6 @@ module Program =
         Plan this being done from an fsx script (FAKE style), command line or YAML config.  One to discuss.
         *)
 
-        let tracer = ConsoleTracer() :> ITracer
-        tracer.Info <| sprintf "Cantos started %s." (DateTime.Now.ToString())
-
         try 
             //TODO config/options is bit of mess.  Clean this up when trying fsx approach.
             let options = optionsFromArgs argv;
@@ -52,7 +42,6 @@ module Program =
             let site =
                 { InPath = Uri(srcPath)
                   OutPath = Uri(destPath)
-                  Tracer = tracer
                   Meta = Map.empty }
                 
             //Clean output directory.
@@ -67,7 +56,7 @@ module Program =
 
             //Write content.
             outputs |> Seq.iter writeContent
-            tracer.Info (sprintf "Cantos success.  Wrote site to %s." destPath)
+            logSuccess (sprintf "Cantos success.  Wrote site to %s." destPath)
 
             //Preview it!  //TODO preveiw based on cmd line flag.
             runPreviewServer() 
@@ -76,5 +65,5 @@ module Program =
             0
         with
         | ex ->
-            tracer.Info <| sprintf "Cantos exception.\n%s" ex.Message
+            logError(sprintf "Cantos exception.\n%s" ex.Message)
             1

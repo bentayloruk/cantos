@@ -48,6 +48,7 @@
   <Import Project="$(SolutionDir)\.nuget\nuget.targets" />
   <ItemGroup>
     <Compile Include="Exception.fs" />
+    <Compile Include="Log.fs" />
     <Compile Include="Mime.fs" />
     <Compile Include="IO.fs" />
     <Compile Include="WebServer.fs" />

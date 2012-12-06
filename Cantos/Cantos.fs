@@ -29,18 +29,10 @@ type Content =
     | TextContent of TextContent 
     | BinaryContent of BinaryContent
 
-//Site types.
-type ITracer =
-    abstract member Error : string -> unit
-    abstract member Info : string -> unit
-    abstract member Warning : string -> unit
-
 type Site = 
     { InPath:Uri
       OutPath:Uri
-      Meta:MetaMap
-      Tracer:ITracer
-      }
+      Meta:MetaMap }
 
 type Generator = Site -> unit 
 type Transformer = Site -> Content -> Content

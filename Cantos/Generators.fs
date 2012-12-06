@@ -29,8 +29,13 @@ module Generators =
             let content = textContent |> (markdownTransformer site >> liquidContentTransformer Map.empty site)
 
             match (getUri content) with
-            | DateSlugFormat (date, slug) -> Some(site.OutPath.CombineWithParts([slug + ".html"]), content)
-            | uri -> site.Tracer.Error(sprintf "Bad post file name %s." <| uri.ToString()); None
+
+            | DateSlugFormat (date, slug) ->
+                //TODO support he Jekyll style path outputs.
+                Some(site.OutPath.CombineWithParts([slug + ".html"]), content)
+
+            | uri ->
+                logError(sprintf "Bad post file name %s." <| uri.ToString()); None
         )
 
 ///Used to create one or more books in the site.

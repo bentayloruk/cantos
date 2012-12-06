@@ -1,4 +1,4 @@
-﻿module FireflyServer
+﻿module Cantos.FireflyServer
 
 open System;
 open System.IO;
@@ -9,14 +9,12 @@ open Mime
 open Owin;
 open Gate;
 
-let private writeLn (s:string) = Console.WriteLine(s)
-
 //REAL HACK FEST IN HERE.  IT jUST ABOUT HANGS TOGETHER :)  NOT A HIGH PRIORITY.
 let runPreviewServer path (port:int) =
 
     let server = Firefly.Http.ServerFactory()
     let requestHandler (a:IDictionary<string,System.Object>) (resultDelegate:ResultDelegate) (err:Action<Exception>) = 
-        writeLn path 
+        logInfo (sprintf "Request: %s" path)
 
         //Get file system path (tag index on if a dir request)
         let path = 
@@ -69,5 +67,5 @@ let runPreviewServer path (port:int) =
 
         ()
     let server = server.Create(requestHandler, port)
-    writeLn ("Running Firefly on port " + port.ToString())
+    logInfo ("Running Firefly on port " + port.ToString())
     ()
