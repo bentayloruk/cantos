@@ -18,13 +18,14 @@ module Program =
             if args.Length > 0 then args.[0] else Dir.currentDir
             |> Path.getFullPath 
             |> ensureEndsWithDirSeparatorChar
+
         if not (Dir.exists srcPath) then raiseArgEx (sprintf "Source path does not exist.\n%s" srcPath) "Source Path"
 
         { SourcePath = srcPath;
           DestinationPath = ensureEndsWithDirSeparatorChar (Path.combine [| srcPath; "_site" |])
-          PreviewServerPort = 8888
-          }
+          PreviewServerPort = 8888 }
 
+    //Bit of pre-amble...
     let logStart site = 
         logInfo "[ Cantos - F#st and furious static website generator ]"
         logInfo (sprintf "InPath: %s" (site.InPath.ToString()))
@@ -41,18 +42,17 @@ module Program =
         try 
             //TODO config/options is bit of mess.  Clean this up when trying fsx approach.
             let options = optionsFromArgs argv;
-            let srcPath, destPath = options.SourcePath, options.DestinationPath
-            let runPreviewServer = fun () -> FireflyServer.runPreviewServer destPath options.PreviewServerPort
+            let runPreviewServer = fun () -> FireflyServer.runPreviewServer options.DestinationPath options.PreviewServerPort
 
             let site =
-                { InPath = Uri(srcPath)
-                  OutPath = Uri(destPath)
+                { InPath = Uri(options.SourcePath)
+                  OutPath = Uri(options.DestinationPath)
                   Meta = Map.empty }
             
             logStart site 
 
             //Clean output directory.
-            Dir.cleanDir (fun di -> di.Name = ".git") destPath 
+            Dir.cleanDir (fun di -> di.Name = ".git") options.DestinationPath 
 
             //Run generators.
             let generators = [ generateBlog; (*generateBooks;*) generateBasicSite; ]
@@ -60,7 +60,7 @@ module Program =
 
             //Write content.
             outputs |> Seq.iter writeContent
-            logSuccess (sprintf "Success.  Output written to:\n%s.\n" destPath)
+            logSuccess (sprintf "Success.  Output written to:\n%s.\n" options.DestinationPath)
 
             //Preview it!  //TODO preveiw based on cmd line flag.
             runPreviewServer() 
