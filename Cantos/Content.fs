@@ -12,7 +12,6 @@ module Content =
 
     let htmlExtension = ".html"
 
-
     let (|Text|_|) = function | TextContent(x) -> Some(x) | BinaryContent(_) -> None
 
     let (|Meta|_|) = function | TextContent(x) -> Some(x.Meta) | BinaryContent(x) -> Some(x.Meta)

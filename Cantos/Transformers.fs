@@ -1,61 +1,38 @@
 ﻿namespace Cantos
 
 [<AutoOpen>]
+///
+///Liquid template engine transformer bits.
+///
 module LiquidTransformer = 
     
     open DotLiquid
     open System.IO
     open System.Collections.Generic
-        
-        (*
-    type MetaDrop(meta:MetaMap) = 
-        inherit Drop()
-        override __.BeforeMethod(name) = 
-            let v = meta.tryGetValue name
-            //Review - do we need to wrap chlid maps in a drop too?
-            if v.IsSome then metaValueObj v.Value else null
-            *)
 
+    ///Reads template from reader and transforms with DotLiquid and the provided hash data.
     let liquidTransform (hash:Hash) (reader:TextReader) =
         let template = Template.Parse(reader.ReadToEnd())
         new StringReader(template.Render(hash)) :> TextReader
 
     ///Transforms the content out content using the Liquid templating engine.
-    ///Does not render templates (this allows content post processing with other transformers).
+    ///Does not recurse layouts (this allows content post processing with other transformers).
     let liquidContentTransformer namedMetas (content:Content) =
 
         match content with
 
         | Meta meta & Text x ->
 
+            //Combine page meta with any provided "global" metas (e.g. site).
             let metas = ("page", Mapping(meta))::namedMetas |> Map.ofSeq
             let hash = Hash.FromDictionary(toDictionary metas)
             textTransform (liquidTransform hash) x
 
         | _ -> content
 
-    (*
-            Hash.FromDictionary
-    //TODO join site meta to meta.
-    //TODO naive recusion.  Fix up.  Recursively convert the meta values to a hash that dotliquid likes.
-    let rec toHash value : obj = 
-        match value with
-        | Mapping(map) ->
-            let hash = Hash()
-            map
-            |> Seq.iter (fun kvp -> hash.Add(kvp.Key, toHash kvp.Value))
-            hash :> obj
-        | Object(o) -> o
-        | String(s) -> s :> obj
-        | Int(i) -> i :> obj
-        | List(l) -> 
-            l
-            |> Seq.map (fun item -> toHash item)
-            |> List.ofSeq
-            :> obj
-            *)
-
+///
 ///Markdown conversion.
+///
 [<AutoOpen>]
 module MarkdownTransformer =
 
@@ -74,8 +51,10 @@ module MarkdownTransformer =
     ///Turns .md or .markdown files into html.
     let markdownTransformer (content:Content) = 
         matchTextTransform (|Markdown|_|) toMarkdown content
-        
 
+///
+///Handles content layouts.
+///
 [<AutoOpen>]
 module LayoutTransformer = 
 
@@ -84,7 +63,7 @@ module LayoutTransformer =
     open System.Collections.Generic
     open System
 
-    let buildTemplateMap layoutPath = 
+    let buildLayoutMap layoutPath = 
         ///Create a map of layouts below sourcePath.
         //TODO make it easier to get files with front matter.  This is too much mess.
         childFilePathsEx layoutPath
@@ -97,42 +76,49 @@ module LayoutTransformer =
             | BinaryContent(_) -> None )
         |> Map.ofSeq
 
-        (*
     ///Transforms contents that have "layout" meta.
-    let layoutTransformer layoutDir (site:Site) =
+    let layoutTransformer (site:Site) =
 
-        let layoutMap = buildTemplateMap (site.InPath.CombineWithParts(layoutDir))
+        let layoutMap = buildLayoutMap (site.InPath.CombineWithParts(["_layouts"]))
         
         //Return rest of computation, so we don't keep parsing template.
-        fun content ->
+        fun (content:Content) ->
             //TODO this code is not super readable.  Fix it up.
             //Look for "layout" in meta.  Transform, then recurse looking for "layout" in the layout!
-            let rec recurseLayouts (meta:MetaMap) (content:TextContent) =
+            let rec recurseLayouts = function
 
-                match meta with
+                | TextContent(x) ->
 
-                | LayoutName(name) ->
+                    match x.Meta with
 
-                    match layoutMap.tryGetValue(name) with
+                    | LayoutName(name) ->
 
-                    | Some(templateInfo) ->
+                        match layoutMap.tryGetValue(name) with
 
-                        let mergedMeta = templateInfo.Meta.join(meta.Remove("layout"))
-                        let o = 
-                            textTransform
-                            content.DecorateReader(fun tr ->
-                                let meta = mergedMeta.Add("content", MetaValue.String(tr.ReadToEnd()))
-                                use templateReader = new StringReader(templateInfo.Template)
-                                liquidTransform meta templateReader)
+                        | Some(templateInfo) ->
 
-                        recurseLayouts mergedMeta o 
+                            //Add content and site meta...
+                            use tr = x.ReaderF()
+                            let globalMetas = ["site", Mapping(site.Meta); "content", MetaValue.String(tr.ReadToEnd())]
 
-                    | None -> content//Log!!
+                            //Create "new" content containing the layout template and new meta. 
+                            let layoutContent = 
+                                { x with
+                                    Meta = templateInfo.Meta.join(x.Meta.Remove("layout"));
+                                    ReaderF = fun () -> new StringReader(templateInfo.Template) :> TextReader }
 
-                | None | Some(_) -> content 
+                            //Apply the liquid transform to the layout...
+                            let layoutContent  = liquidContentTransformer globalMetas (Content.TextContent(layoutContent))
 
+                            recurseLayouts layoutContent 
 
-            match content with
-            | TextContent(toi) -> TextContent(recurseLayouts toi.Meta toi) 
-            | _ -> content
-            *)
+                        | None -> 
+
+                            logError (sprintf "Layout named %s missing.  Referenced by content:\n%s" name (x.Uri.ToString()))
+                            Content.TextContent(x)
+
+                    | _ -> Content.TextContent(x)
+
+                | x -> x 
+
+            recurseLayouts content

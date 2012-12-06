@@ -14,7 +14,7 @@ module Generators =
 
     ///Copies all files from the site in path and transforms text files where it can.
     let generateBasicSite (site:Site) = 
-        let transform = markdownTransformer >> liquidContentTransformer site
+        let transform = markdownTransformer >> liquidContentTransformer site >> layoutTransformer site
         descendantFilePaths site.InPath
         |> Seq.map (getContent >> transform >> (outUriContent site))
 
@@ -29,7 +29,7 @@ module Generators =
         |> Seq.choose textContent
         |> Seq.choose (fun textContent ->
 
-            let content = textContent |> (markdownTransformer >> liquidContentTransformer site)
+            let content = textContent |> (markdownTransformer >> liquidContentTransformer site >> layoutTransformer site)
 
             match (getUri content) with
 

@@ -64,15 +64,6 @@ module FrontMatter =
 
         | _ -> Map.empty //Some as yet unsupported YamlNodeType.
 
-    let maybeStringScalar (key:string) (metaValues:MetaMap) =
-        let key = key.ToLower()
-        if metaValues.ContainsKey(key) then
-            match metaValues.[key] with
-            | String(s) -> Some(s)
-            | _ -> None
-        else None
-        
-
     ///Reads the front matter from a reader.  Does not assume Yaml.  Just pulls the text between ---.
     let readFrontMatterBlock (reader:#TextReader) =
 

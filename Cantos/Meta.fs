@@ -45,7 +45,7 @@ let (|BoolValueD|) key def (meta:MetaMap) =
         else false//Should use convertor and throw if rubbish value.
     | _ -> def 
 
-let (|LayoutName|_|) meta =
-    match meta with 
+let (|LayoutName|_|) map =
+    match map with 
     | StringValue "layout" v -> Some(v) 
     | _ -> None
