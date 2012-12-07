@@ -44,10 +44,12 @@ module Program =
             let options = optionsFromArgs argv;
             let runPreviewServer = fun () -> FireflyServer.runPreviewServer options.DestinationPath options.PreviewServerPort
 
+            let siteMeta = MetaValue.Mapping(["time", MetaValue.DateTime(DateTime.Now)] |> Map.ofList)
+
             let site =
                 { InPath = Uri(options.SourcePath)
                   OutPath = Uri(options.DestinationPath)
-                  Meta = Map.empty }
+                  Meta = [ "site", siteMeta ] |> Map.ofList }
             
             logStart site 
 
@@ -56,7 +58,11 @@ module Program =
 
             //Run generators.
             let generators = [ generateBlog; (*generateBooks;*) generateBasicSite; ]
-            let outputs = seq { for generator in generators do yield! generator site } 
+            let site, outputs =
+                generators
+                |> Seq.fold (fun (site, outputs) generator ->
+                let os = generator site
+                site, Seq.concat [ outputs; os ]) (site, Seq.empty)
 
             //Write content.
             outputs |> Seq.iter writeContent

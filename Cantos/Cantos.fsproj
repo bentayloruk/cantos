@@ -29,6 +29,8 @@
     <StartArguments>"..\..\..\Cantos.SampleSite"</StartArguments>
     <Externalconsole>True</Externalconsole>
     <Commandlineparameters>../../../Cantos.SampleSite</Commandlineparameters>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>

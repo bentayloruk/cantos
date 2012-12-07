@@ -20,6 +20,7 @@ let toDictionary (metaMap:MetaMap) =
             map |> Seq.iter (fun kvp -> dic.Add(kvp.Key, inner kvp.Value))
             dic :> obj
         | Object(o) -> o
+        | DateTime(dt) -> dt :> obj
         | String(s) -> s :> obj
         | Int(i) -> i :> obj
         | List(l) -> l |> Seq.map (fun item -> inner item) |> List.ofSeq :> obj
@@ -28,7 +29,6 @@ let toDictionary (metaMap:MetaMap) =
 
     //Always a Dictionary<string,objj>
     o :?> Dictionary<string,obj>
-
 
 let (|StringValue|_|) key (meta:MetaMap) = 
     let value = meta.tryGetValue key

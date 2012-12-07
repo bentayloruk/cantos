@@ -13,6 +13,7 @@ and MetaMap = Map<MetaKey, MetaValue>
 and MetaValue =
     | String of string
     | Int of int 
+    | DateTime of DateTime 
     | List of list<MetaValue>
     | Mapping of MetaMap 
     | Object of obj

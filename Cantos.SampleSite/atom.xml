@@ -1,0 +1,26 @@
+---
+---
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+ 
+ <title>Cantos Blog</title>
+ <link href="https://raw.github.com/bentayloruk/cantos/master/atom.xml" rel="self"/>
+ <link href="https://www.github.com/bentayloruk/cantos"/>
+ <updated>{{ site.time | date_to_xmlschema }}</updated>
+ <id>https://www.github.com/bentayloruk/cantos</id>
+ <author>
+   <name>Ben Taylor</name>
+   <email>cantos.blog@bentaylor.org</email>
+ </author>
+
+ {% for post in site.posts %}
+ <entry>
+   <title>{{ post.title }}</title>
+   <link href="https://www.github.com/bentayloruk/cantos{{ post.url }}"/>
+   <updated>{{ post.date | date_to_xmlschema }}</updated>
+   <id>https://www.github.com/bentayloruk/cantos{{ post.id }}</id>
+   <content type="html">{{ post.content | xml_escape }}</content>
+ </entry>
+ {% endfor %}
+ 
+</feed>

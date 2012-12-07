@@ -9,23 +9,33 @@ module LiquidTransformer =
     open DotLiquid
     open System.IO
     open System.Collections.Generic
+    open System
+            
+    ///Compatibility filters for Jekyll.
+    type JekyllFunctions() =
+        static member date_to_xmlschema (dt:DateTime) =
+            //http://stackoverflow.com/questions/6314154/generate-datetime-format-for-xml
+            dt.ToUniversalTime().ToString("o")
+        //TODO// static member xml_escape (x:string) =
 
     ///Reads template from reader and transforms with DotLiquid and the provided hash data.
     let liquidTransform (hash:Hash) (reader:TextReader) =
+        //Review: DotLiquid takes a Stream.  Maybe we should use stream instead of TextReader.
         let template = Template.Parse(reader.ReadToEnd())
-        new StringReader(template.Render(hash)) :> TextReader
+        let renderParams = RenderParameters(Filters = [typeof<JekyllFunctions>], LocalVariables = hash)
+        new StringReader(template.Render(renderParams)) :> TextReader
 
     ///Transforms the content out content using the Liquid templating engine.
     ///Does not recurse layouts (this allows content post processing with other transformers).
-    let liquidContentTransformer namedMetas (content:Content) =
+    let liquidContentTransformer (globalMeta:MetaMap) (content:Content) =
 
         match content with
 
-        | Meta meta & Text x ->
+        | Meta contentMeta & Text x ->
 
             //Combine page meta with any provided "global" metas (e.g. site).
-            let metas = ("page", Mapping(meta))::namedMetas |> Map.ofSeq
-            let hash = Hash.FromDictionary(toDictionary metas)
+            let meta = globalMeta.Add("page", Mapping(contentMeta))
+            let hash = Hash.FromDictionary(toDictionary meta)
             textTransform (liquidTransform hash) x
 
         | _ -> content
@@ -99,7 +109,7 @@ module LayoutTransformer =
 
                             //Add content and site meta...
                             use tr = x.ReaderF()
-                            let globalMetas = ["site", Mapping(site.Meta); "content", MetaValue.String(tr.ReadToEnd())]
+                            let meta = site.Meta.Add("content", MetaValue.String(tr.ReadToEnd()))
 
                             //Create "new" content containing the layout template and new meta. 
                             let layoutContent = 
@@ -108,7 +118,7 @@ module LayoutTransformer =
                                     ReaderF = fun () -> new StringReader(templateInfo.Template) :> TextReader }
 
                             //Apply the liquid transform to the layout...
-                            let layoutContent  = liquidContentTransformer globalMetas (Content.TextContent(layoutContent))
+                            let layoutContent  = liquidContentTransformer meta (Content.TextContent(layoutContent))
 
                             recurseLayouts layoutContent 
 
