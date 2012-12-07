@@ -11,6 +11,7 @@ module Content =
     open FrontMatter
 
     let htmlExtension = ".html"
+    let markdownFileExtensions = [".md"; ".markdown";]
 
     let (|Text|_|) = function | TextContent(x) -> Some(x) | BinaryContent(_) -> None
 
@@ -19,9 +20,8 @@ module Content =
     let (|Markdown|_|) (content:Content) =
         match content with
         | TextContent(x) ->
-            if x.Uri.HasFileExtension([".md";".markdown";]) then Some(x) else None
+            if x.Uri.HasFileExtension(markdownFileExtensions) then Some(x) else None
         | BinaryContent(_) -> None
-        
 
     let getUri = function | TextContent(x) -> x.Uri | BinaryContent(x) -> x.Uri
 
