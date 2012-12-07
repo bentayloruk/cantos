@@ -61,8 +61,7 @@ module Program =
             let site, outputs =
                 generators
                 |> Seq.fold (fun (site, outputs) generator ->
-                let os = generator site
-                site, Seq.concat [ outputs; os ]) (site, Seq.empty)
+                    site, Seq.concat [ outputs; generator site ]) (site, Seq.empty)
 
             //Write content.
             outputs |> Seq.iter writeContent
