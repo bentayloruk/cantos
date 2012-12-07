@@ -23,12 +23,14 @@ type TextContent =
     { Meta:MetaMap
       HadFrontMatter:bool
       ReaderF:unit->TextReader
-      Uri:Uri }
+      Uri:Uri
+      UriOut:option<Uri> }
 
 type BinaryContent = 
     { Meta:MetaMap
       StreamF:unit->Stream
-      Uri:Uri }
+      Uri:Uri
+      UriOut:option<Uri> }
 
 type Content =
     //Maybe add "DirectCopy" as an output.
@@ -38,7 +40,8 @@ type Content =
 type Site = 
     { InPath:Uri
       OutPath:Uri
-      Meta:MetaMap }
+      Meta:MetaMap
+      RegisterTemplateType:Type->unit }
 
 type Generator = Site -> unit 
 type Transformer = Site -> Content -> Content

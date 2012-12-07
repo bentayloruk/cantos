@@ -14,15 +14,15 @@ module Program =
     ///Very basic args for now!
     let optionsFromArgs (args:array<string>) =
 
-        let srcPath =   
-            if args.Length > 0 then args.[0] else Dir.currentDir
-            |> Path.getFullPath 
-            |> ensureEndsWithDirSeparatorChar
+        let fixPath = Path.getFullPath >> ensureEndsWithDirSeparatorChar
+        let indexedArgOrF i f = if args.Length >= i+1 then args.[i] else f() 
 
+        let srcPath = indexedArgOrF 0 (fun () -> "") |> fixPath
+        let destPath = indexedArgOrF 1 (fun () -> Path.combine [| srcPath; "_site" |]) |> fixPath
         if not (Dir.exists srcPath) then raiseArgEx (sprintf "Source path does not exist.\n%s" srcPath) "Source Path"
 
         { SourcePath = srcPath;
-          DestinationPath = ensureEndsWithDirSeparatorChar (Path.combine [| srcPath; "_site" |])
+          DestinationPath = destPath 
           PreviewServerPort = 8888 }
 
     //Bit of pre-amble...
@@ -49,7 +49,9 @@ module Program =
             let site =
                 { InPath = Uri(options.SourcePath)
                   OutPath = Uri(options.DestinationPath)
-                  Meta = [ "site", siteMeta ] |> Map.ofList }
+                  Meta = [ "site", siteMeta ] |> Map.ofList
+                  RegisterTemplateType = initSafeType
+                  }
             
             logStart site 
 
@@ -57,15 +59,28 @@ module Program =
             Dir.cleanDir (fun di -> di.Name = ".git") options.DestinationPath 
 
             //Run generators.
-            let generators = [ generateBlog; (*generateBooks;*) generateBasicSite; ]
+            let generators = [ generateBlog; generateBooks; generateBasicSite; ]
             let site, outputs =
                 generators
                 |> Seq.fold (fun (site, outputs) generator ->
-                let os = generator site
-                site, Seq.concat [ outputs; os ]) (site, Seq.empty)
+                    let outputs = Seq.concat [ outputs; generator site ]
+                    site, outputs
+                    ) (site, Seq.empty)
 
-            //Write content.
-            outputs |> Seq.iter writeContent
+            //Setup our default transformers.
+            let liquidTransform = 
+                //Set up our "gloval" liquid environment (the includes and functions available).
+                let includesPath = site.InPath.CombineWithParts(["_includes"])
+                let rpf = renderParameters (IncludeFileSystem.Create(includesPath)) [typeof<JekyllFunctions>]
+                liquidContentTransformer rpf 
+            let contentTransform = markdownTransformer >> liquidTransform site.Meta
+            let siteTransform = layoutTransformer liquidTransform site
+
+            //Transform and write content.
+            outputs
+            |> Seq.map (contentTransform >> siteTransform)
+            |> Seq.iter writeContent
+
             logSuccess (sprintf "Success.  Output written to:\n%s.\n" options.DestinationPath)
 
             //Preview it!  //TODO preveiw based on cmd line flag.

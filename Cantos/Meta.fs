@@ -10,7 +10,7 @@ type Map<'a,'b> when 'a : comparison with
     member x.join (q:Map<'a,'b>) = 
         Map(Seq.concat [ (Map.toSeq x) ; (Map.toSeq q) ])
 
-let toDictionary (metaMap:MetaMap) = 
+let metaToDic (metaMap:MetaMap) = 
 
     //TODO make this tail recursive.
     let rec inner x =
@@ -44,6 +44,8 @@ let (|BoolValueD|) key def (meta:MetaMap) =
         if x = "true" || x = "yes" then true
         else false//Should use convertor and throw if rubbish value.
     | _ -> def 
+
+let (|IsPublished|) (meta:MetaMap) = (|BoolValueD|) "published" true meta
 
 let (|LayoutName|_|) map =
     match map with 

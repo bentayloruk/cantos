@@ -25,21 +25,29 @@ module Content =
 
     let getUri = function | TextContent(x) -> x.Uri | BinaryContent(x) -> x.Uri
 
+    let withMeta key value content =
+        match content with
+        | TextContent(x) -> TextContent({ x with Meta = x.Meta.Add(key, value) })
+        | BinaryContent(x) -> BinaryContent({ x with Meta = x.Meta.Add(key, value) })
+
+    let withUriOut content uri =
+        match content with
+        | TextContent(x) -> TextContent({ x with UriOut = Some(uri) })
+        | BinaryContent(x) -> BinaryContent({ x with UriOut = Some(uri) })
+
     ///Creates an outUri,Content pair.  Out uri is relative to site out path as was to site in path.
-    let outUriContent site content =
+    let outUri site content =
+        //Of course, assumes no content path is outside of InPath...
         let uri =
-            //Of course, assumes no content path is outside of InPath...
-            let uri =
-                getUri content
-                |> site.InPath.MakeRelativeUri
-                |> site.OutPath.CombineWithRelativeUri
+            getUri content
+            |> site.InPath.MakeRelativeUri
+            |> site.OutPath.CombineWithRelativeUri
 
-            //TODO - not sure I like this.  What if it really is raw markdown!  Go back to content format?
-            match content with
-            | Markdown md -> uri.WithExtension(htmlExtension)
-            | _ -> uri
-
-        uri, content
+        //TODO - not sure I like this.  What if it really is raw markdown!  Go back to content format?
+        match content with
+        | Markdown md -> uri.WithExtension(htmlExtension)
+        | _ -> uri
+        |> withUriOut content
 
     let textTransform transform textContent =
         let wrap = fun () ->
@@ -61,10 +69,10 @@ module Content =
         let hadFrontMatter, lineCount, meta = getFileFrontMatterMeta path
         if hadFrontMatter then
             let readContents = fun () -> File.offsetFileReader path lineCount 
-            TextContent({ Meta = meta; HadFrontMatter=true; ReaderF = readContents; Uri = Uri(path); })
+            TextContent({ Meta = meta; HadFrontMatter=true; ReaderF = readContents; Uri = Uri(path); UriOut = None})
         else
             //TODO 
-            BinaryContent({ Meta = Map.empty; Uri = Uri(path); StreamF = fun () -> File.fileReadStream path;  })
+            BinaryContent({ Meta = Map.empty; Uri = Uri(path); UriOut = None; StreamF = fun () -> File.fileReadStream path; })
 
     let hasFrontMatter (content:Content) =
         match content with
@@ -74,20 +82,24 @@ module Content =
     let textContent (content:Content) = match content with | TextContent(x) -> Some(content) | _ -> None
 
     ///Write content to the provided uri.
-    let writeContent (uri:Uri, content) = 
+    let writeContent content = 
 
         match content with
 
-        | TextContent(x) ->
-            Dir.ensureDir uri.LocalPathUnescaped
+        | TextContent(x) when x.UriOut.IsSome ->
+            Dir.ensureDir x.UriOut.Value.LocalPathUnescaped
             use r = x.ReaderF()
-            File.WriteAllText(uri.LocalPathUnescaped , r.ReadToEnd())//Change to stream write.
+            File.WriteAllText(x.UriOut.Value.LocalPathUnescaped, r.ReadToEnd())//Change to stream write.
 
-        | BinaryContent(x) ->
-            Dir.ensureDir uri.LocalPathUnescaped
-            use fs = File.Create(uri.LocalPathUnescaped)
+        | BinaryContent(x) when x.UriOut.IsSome ->
+            Dir.ensureDir x.UriOut.Value.LocalPathUnescaped
+            use fs = File.Create(x.UriOut.Value.LocalPathUnescaped)
             use s = x.StreamF()
             s.CopyTo(fs)
+
+        | x ->
+            logDebug "Output with no UriOut."
+            ()//Nowhere to write to.
 
     //TODO this file stuff is ugly here.  Decide if compact with IO.
     let tempFileExclusions:FileExclusion = fun fi -> fi.Name.EndsWith("~") || fi.Name.EndsWith(".swp")

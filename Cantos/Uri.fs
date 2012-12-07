@@ -16,9 +16,10 @@ type Uri with
             extensions |> Seq.exists (fun expected -> String.Compare(actual, expected, StringComparison.InvariantCultureIgnoreCase) = 0)
         else false
 
-    member x.CombineWithParts(parts) = Uri(Path.Combine(x.AbsolutePath :: parts |> Array.ofList))
+    //TODO using this LocalPathunescaped is all a bit hacky.  Review. 
+    member x.CombineWithParts(parts) = Uri(Path.Combine(x.LocalPathUnescaped :: parts |> Array.ofList))
 
-    member x.CombineWithRelativeUri(uri:Uri) = Uri(Path.Combine(x.AbsolutePath, uri.OriginalString))
+    member x.CombineWithRelativeUri(uri:Uri) = Uri(Path.Combine(x.LocalPathUnescaped, uri.OriginalString))
 
     ///Get the safe unescaped filename (as LocalPath has in %20).
     member x.LocalPathUnescaped = Uri.UnescapeDataString(x.LocalPath)

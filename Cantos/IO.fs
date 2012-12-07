@@ -116,9 +116,12 @@ module Dir =
 
     ///Ensures that directories in the provided path are created.
     let ensureDir path = 
-        let dirName = fs.Path.GetDirectoryName(path)
-        if fs.Directory.Exists(dirName) <> true then
-            fs.Directory.CreateDirectory(dirName) |> ignore
+        let dirName = System.IO.Path.GetDirectoryName(path)
+        //TODO massive hack as my URI usages is causing encoding issues.  Coming back to this.
+        let dirName = dirName.Replace("%20"," ")
+        //let dirName = fs.Path.GetDirectoryName(path)
+        if System.IO.Directory.Exists(dirName) = false then
+            System.IO.Directory.CreateDirectory(dirName) |> ignore
 
     ///Cleans files and directories below a dir.
     let cleanDir skipDir path =

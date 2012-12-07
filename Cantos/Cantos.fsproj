@@ -26,7 +26,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DocumentationFile>bin\Debug\Cantos.XML</DocumentationFile>
     <Prefer32Bit>true</Prefer32Bit>
-    <StartArguments>"..\..\..\Cantos.SampleSite"</StartArguments>
+    <StartArguments>"C:\Users\Ben Taylor\Projects\new.enticify.com\site" "C:\Users\Ben Taylor\Projects\enticify.com"</StartArguments>
     <Externalconsole>True</Externalconsole>
     <Commandlineparameters>../../../Cantos.SampleSite</Commandlineparameters>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
@@ -59,6 +59,7 @@
     <Compile Include="Meta.fs" />
     <Compile Include="FrontMatter.fs" />
     <Compile Include="Content.fs" />
+    <Compile Include="Pandoc.fs" />
     <Compile Include="Transformers.fs" />
     <Compile Include="Generators.fs" />
     <Compile Include="Program.fs" />
@@ -75,6 +76,10 @@
     </Reference>
     <Reference Include="Gate">
       <HintPath>..\packages\Gate.0.3.6\lib\net40\Gate.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="MarkdownSharp">
+      <HintPath>..\packages\MarkdownSharp.1.13.0.0\lib\35\MarkdownSharp.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="mscorlib" />

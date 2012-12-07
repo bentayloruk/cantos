@@ -4,14 +4,14 @@ module Cantos.Log
 
 open System
 
-type LogLevels = | Info | Warning | Error | Success
+type LogLevels = | Info | Warning | Error | Success | Debug
 
 ///Write to the Console.
 let consoleLogWriter logLevel (msg:string) = 
     let x = Console.ForegroundColor
     Console.ForegroundColor <- 
         match logLevel with
-        | Info -> x 
+        | Info | Debug -> x 
         | Error -> ConsoleColor.Red
         | Warning -> ConsoleColor.DarkYellow
         | Success -> ConsoleColor.Green
@@ -23,6 +23,7 @@ let mutable writeLine = consoleLogWriter
 
 //Handy log functions...
 let logError = writeLine Error
+let logDebug = writeLine Debug
 let logInfo = writeLine Info 
 let logWarning = writeLine Warning 
 let logSuccess = writeLine Success 

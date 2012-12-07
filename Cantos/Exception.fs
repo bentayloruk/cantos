@@ -8,4 +8,3 @@ let inline raiseNotImpl msg = raise <| NotImplementedException(msg)
 let inline raiseArgEx msg (arg:string) = raise <| ArgumentException(msg, arg)
 
 let inline raiseInvalidOp msg = raise <| InvalidOperationException(msg)
-
