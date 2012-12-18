@@ -36,7 +36,7 @@ let (|StringValue|_|) key (meta:MetaMap) =
     | Some(MetaValue.String(x)) -> Some(x)
     | _ -> None
 
-let (|BoolValueD|) key def (meta:MetaMap) = 
+let (|ValueOrDefault|) key def (meta:MetaMap) = 
     let value = meta.tryGetValue key
     match value with
     | Some(MetaValue.String(x)) ->
@@ -44,8 +44,6 @@ let (|BoolValueD|) key def (meta:MetaMap) =
         if x = "true" || x = "yes" then true
         else false//Should use convertor and throw if rubbish value.
     | _ -> def 
-
-let (|IsPublished|) (meta:MetaMap) = (|BoolValueD|) "published" true meta
 
 let (|LayoutName|_|) map =
     match map with 

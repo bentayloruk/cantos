@@ -67,12 +67,14 @@ module Program =
                     site, outputs
                     ) (site, Seq.empty)
 
-            //Setup our default transformers.
+            //Set up the DotLiquid transform (our default and main templating engine).
             let liquidTransform = 
-                //Set up our "gloval" liquid environment (the includes and functions available).
+                //REVIEW tidy this up - Set up our "global" liquid environment (the includes and functions available).
                 let includesPath = site.InPath.CombineWithParts(["_includes"])
                 let rpf = renderParameters (IncludeFileSystem.Create(includesPath)) [typeof<JekyllFunctions>]
                 liquidContentTransformer rpf 
+
+            //Set up our two transform pipelines.
             let contentTransform = markdownTransformer >> liquidTransform site.Meta
             let siteTransform = layoutTransformer liquidTransform site
 

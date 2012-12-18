@@ -17,6 +17,12 @@ module Content =
 
     let (|Meta|_|) = function | TextContent(x) -> Some(x.Meta) | BinaryContent(x) -> Some(x.Meta)
 
+    ///Returns value of published
+    let (|PublishedContent|_|) content =
+        match content with
+        | Meta(x) -> if (|ValueOrDefault|) "published" true x = true then Some(content) else None
+        | _ -> Some(content) 
+
     let (|Markdown|_|) (content:Content) =
         match content with
         | TextContent(x) ->

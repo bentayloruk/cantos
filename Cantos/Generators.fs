@@ -13,6 +13,7 @@ module Generators =
     let generateBasicSite (site:Site) = 
         descendantFilePaths site.InPath
         |> Seq.map (getContent >> outUri site)
+        |> Seq.choose (|PublishedContent|_|) 
 
     ///Generates blog post output.
     let generateBlog (site:Site) = 
@@ -22,6 +23,7 @@ module Generators =
         if Directory.Exists(blogDir.LocalPathUnescaped) then
             childFilePathsEx blogDir
             |> Seq.choose (getContent >> hasFrontMatter)
+            |> Seq.choose (|PublishedContent|_|)
             //Review - should I choose AND map here?
             |> Seq.choose textContent
             |> Seq.choose (fun content ->
@@ -41,6 +43,7 @@ module Generators =
 ///Used to create one or more books in the site.
 [<AutoOpen>]
 module BookGenerator =
+    open System
 
     ///Removes leading numbers and -.  Example:  1010-myname -> myname.  
     let deNumberWang (name:string) =
@@ -54,7 +57,7 @@ module BookGenerator =
     open FrontMatter
 
     ///Represents a Table of Contents.
-    type Toc = { Chapters:list<Chapter>; }
+    type Toc = { Id:string; Chapters:list<Chapter>; }
     and Chapter = { Title:string; Headings:list<Heading> }
     and Heading = { Href:string; Title:string; EnableLink: bool; }
 
@@ -62,14 +65,15 @@ module BookGenerator =
     let maybeHeadingFromRootedPath sitePath = 
         Some( { Heading.Href = "TBD"; Title = "TBD"; EnableLink = true; } )
         
-    let tryGetHeading output =
+    let tryGetHeading (rootUri:Uri) output =
         match output with 
         | TextContent(x) ->
-            let shouldLink = (|BoolValueD|) "toc-link" true x.Meta
+            let shouldLink = (|ValueOrDefault|) "toc-link" true x.Meta
             match x.Meta with
             | StringValue "toc-title" t
             | StringValue "title" t ->
-                Some({ Href = ""(*TODO*); Title = t; EnableLink = shouldLink })
+                let href = "/" + rootUri.MakeRelativeUri(x.UriOut.Value).ToString()
+                Some({ Href = href; Title = t; EnableLink = shouldLink })
             | _ -> None
             
         | BinaryContent(_) -> None
@@ -77,7 +81,7 @@ module BookGenerator =
     ///Creates a TOC for files in the given site path.
     let toBookOutputs (path:string) (site:Site) = 
 
-        let bookRoot =
+        let bookOutPath =
             DirectoryInfo(path).Name.Split('.')
             |> List.ofArray
             |> site.OutPath.CombineWithParts 
@@ -99,45 +103,62 @@ module BookGenerator =
                         //This needs to be a LOT neater.
                         let content =
                             let output = getContent fi.FullName
-                            let outPath = bookRoot.CombineWithParts([chapterDir; deNumberWang fi.Name])
+                            let outPath = bookOutPath.CombineWithParts([chapterDir; deNumberWang fi.Name])
                             let outPath = 
                                 match output with 
                                 | TextContent(x) -> outPath.WithExtension(htmlExtension)
                                 | BinaryContent(x) -> outPath
                             withUriOut output outPath
 
-                        let heading = tryGetHeading content
-                        let headings = if heading.IsSome then heading.Value::headings else headings
-                        //TODO don't add chapters with no headings?
-                        //TODO outputs includes non-page and binary files.  Does this break anything.
-                        (content::contents, headings)
+                        match content with
+                        | PublishedContent(x) ->
+                            let heading = tryGetHeading site.OutPath x
+                            let headings = if heading.IsSome then heading.Value::headings else headings
+                            //REVIEW outputs includes non-page and binary files.  Does this break anything.
+                            (x::contents, headings)
+
+                        | _ -> (contents, headings)
+                            
                         ) ([], [])
 
-                //We take first heading in each folder and use as Chapter home page.
                 let headings = headings |> List.rev
-                let chapter = { Title = (headings.Head).Title; Headings = headings |> List.tail }
                 let outputs = outputs |> List.rev
-                (chapter::chapters, outputs::contentItems)
+
+                if headings.Length >= 2 then
+                    let chapter = { Title = (headings.Head).Title; Headings = headings |> List.tail }
+                    (chapter::chapters, outputs::contentItems)
+                else
+                    //Don't add the chapter, but write the content items.
+                    (chapters, outputs::contentItems)
+
             ) ([] , [])
 
+        //Use the folder name as the toc ID as will be unique.
+        let tocMeta =
+            { Id = DirectoryInfo(path).Name.Replace(".","-") + "-toc";
+            Toc.Chapters = chapters |> List.rev }
+            :> obj
+            |> MetaValue.Object
 
-        let toc = MetaValue.Object({ Toc.Chapters = chapters |> List.rev })
-        let contentItems = chapterContents |> List.rev |> List.concat
-        //Add toc to all metas.
-        //TODO add some sort of var to indicate current page?
-        contentItems |> Seq.map (withMeta "toc" toc)
+        let contentItems =
+            chapterContents 
+            |> List.rev 
+            |> List.concat
+
+        contentItems |> Seq.map (withMeta "toc" tocMeta)
 
     ///Generates blog post output.
     let generateBooks (site:Site) = 
         let path = site.InPath.CombineWithParts(["_books"])
 
         if Dir.exists path.LocalPathUnescaped then
-            //Register types we wish to template.
-            [typeof<Toc>; typeof<Chapter>; typeof<Heading>;] |> Seq.iter site.RegisterTemplateType
-            //Build the book outputs.
-            seq {
-                for path in Dir.getDirs path.LocalPathUnescaped do
-                    yield! toBookOutputs path site } 
+
+            //Register types we wish to template (required by DotLiquid).
+            [typeof<Toc>; typeof<Chapter>; typeof<Heading>;]
+            |> Seq.iter site.RegisterTemplateType
+
+            let bookDirs = Dir.getDirs path.LocalPathUnescaped
+            seq { for path in bookDirs do yield! toBookOutputs path site } 
         else
             logInfo(sprintf "Books directory not found.  Skipping.  Looked in: %s" path.AbsolutePath)
             Seq.empty

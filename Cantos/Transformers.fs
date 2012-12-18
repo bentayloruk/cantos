@@ -49,6 +49,7 @@ module LiquidTransformer =
             if Directory.Exists(path.LocalPathUnescaped) then
                 let includesMap = 
                     childFilePathsEx path 
+                    |> Seq.filter (fun path -> Path.GetExtension(path) <> ".swp")//TODO have central filter.
                     |> Seq.map (fun path -> Path.GetFileNameWithoutExtension(path).ToLower(), File.ReadAllText(path))
                     |> Map.ofSeq
                 IncludeFileSystem(includesMap) :> IFileSystem
@@ -90,7 +91,6 @@ module LiquidTransformer =
             //Review: DotLiquid takes a Stream.  Maybe we should use stream instead of TextReader.
             let liquidify (tr:TextReader) = 
                 let template = Template.Parse(tr.ReadToEnd())
-                Template.FileSystem <- IncludeFileSystem.Create(Uri(@"C:\Users\Ben Taylor\Projects\new.enticify.com\site\_includes"))
                 new StringReader(template.Render(renderParams)) :> TextReader
 
             textTransform liquidify x
@@ -149,6 +149,7 @@ module LayoutTransformer =
         //TODO make it easier to get files with front matter.  This is too much mess.
         childFilePathsEx layoutPath
         |> Seq.map getContent
+        |> Seq.choose (|PublishedContent|_|) 
         |> Seq.choose (function
             | TextContent(x) ->
                 let name = x.Uri.FileNameWithoutExtension

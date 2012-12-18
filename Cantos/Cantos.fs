@@ -33,7 +33,6 @@ type BinaryContent =
       UriOut:option<Uri> }
 
 type Content =
-    //Maybe add "DirectCopy" as an output.
     | TextContent of TextContent 
     | BinaryContent of BinaryContent
 
