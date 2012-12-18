@@ -17,7 +17,7 @@ let findPandoc () =
     |> Seq.map (fun path -> Directory.GetFileSystemEntries(path, "pandoc.exe", SearchOption.AllDirectories)) 
     |> Seq.concat
     |> List.ofSeq
-    |> function | [] -> "" | h::_ -> printfn "Found pandoc here %s" h; h
+    |> function | [] -> None | h::_ -> printfn "Found pandoc here %s" h; Some(h)
 
 
 //Runs pandoc for filePath to html.  Drops in same location.

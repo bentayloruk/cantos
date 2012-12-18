@@ -98,22 +98,24 @@ module MarkdownTransformer =
         let md = Markdown()
         md.SafeMode <- false
         md.ExtraMode <- true
-        //md.AutoHeadingIDs <- true 
         md.MarkdownInHtml <- true
         let text = reader.ReadToEnd()
         md.Transform(text)
 
-    let pandocPath = Pandoc.findPandoc() 
-
-    let pandoc (reader:TextReader) = 
-        let exitCode, _, html = Pandoc.toHtml pandocPath reader
+    let pandoc path (reader:TextReader) = 
+        let exitCode, _, html = Pandoc.toHtml path reader
         if exitCode <> 0 then failwith "Failed to exec Pandoc"
         html
 
+    ///Provides function that reads and converts to HTML.  Pandoc if present, else MarkdownDeep.
+    let markdowner = 
+        match Pandoc.findPandoc() with
+        | Some(path) -> (fun reader -> pandoc path reader)
+        | None -> (fun reader -> markdownDeep reader)
+
     ///Reads text content and converts it to Markdown.
     let toMarkdown (reader:TextReader) =
-        //let html = markdownDeep reader
-        let html = pandoc reader
+        let html = markdowner reader
         new StringReader(html)
 
     ///Turns .md or .markdown files into html.

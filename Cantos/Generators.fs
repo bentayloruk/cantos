@@ -69,6 +69,7 @@ module Generators =
         let posts = 
             makePostContents site
             |> Seq.map transform
+            |> Seq.choose (|PublishedContent|_|)
             |> Seq.choose ((|BlogPostData|_|) site.OutPath)
             |> Seq.map (box >> MetaValue.Object)
             |> List.ofSeq
@@ -101,10 +102,6 @@ module BookGenerator =
     and Chapter = { Title:string; Headings:list<Heading> }
     and Heading = { Href:string; Title:string; EnableLink: bool; }
 
-    ///Creates an AHead for from a file.
-    let maybeHeadingFromRootedPath sitePath = 
-        Some( { Heading.Href = "TBD"; Title = "TBD"; EnableLink = true; } )
-        
     let tryGetHeading (rootUri:Uri) output =
         match output with 
         | TextContent(x) ->
