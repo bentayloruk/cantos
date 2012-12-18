@@ -30,7 +30,7 @@ let metaToDic (metaMap:MetaMap) =
     //Always a Dictionary<string,objj>
     o :?> Dictionary<string,obj>
 
-let (|StringValue|_|) key (meta:MetaMap) = 
+let (|MetaString|_|) key (meta:MetaMap) = 
     let value = meta.tryGetValue key
     match value with
     | Some(MetaValue.String(x)) -> Some(x)
@@ -47,5 +47,5 @@ let (|ValueOrDefault|) key def (meta:MetaMap) =
 
 let (|LayoutName|_|) map =
     match map with 
-    | StringValue "layout" v -> Some(v) 
+    | MetaString "layout" v -> Some(v) 
     | _ -> None

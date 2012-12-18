@@ -5,23 +5,6 @@ open System.Collections.Generic
 open System
 
 [<AutoOpen>]
-module NustacheTransformer = 
-    open Nustache.Core
-
-    let nustacheTransform dic (reader:TextReader) =
-        let content = Render.StringToString(reader.ReadToEnd(), dic :> obj)
-        new StringReader(content)
-
-    let nustacheContentTransformer (globalMeta:MetaMap) (content:Content) =
-        match content with
-        | Meta m & Text x ->
-            //Combine page meta with any provided "global" metas (e.g. site).
-            let meta = globalMeta.Add("page", Mapping(m))
-            let dic = metaToDic meta
-            textTransform (nustacheTransform dic) x
-        | _ -> content
-
-[<AutoOpen>]
 ///
 ///Liquid template engine transformer bits.
 ///
@@ -56,12 +39,16 @@ module LiquidTransformer =
             else
                 { new IFileSystem with member __.ReadTemplateFile(c,t) = raiseInvalidOp "No includes are defined." }
             
-    ///Compatibility filters for Jekyll.  DotLiquid requires them to be static members on a class.
+    ///Minor attempt at compatibility filters for Jekyll.  DotLiquid requires them to be static members on a class.
     type JekyllFunctions() =
+
+        //http://stackoverflow.com/questions/6314154/generate-datetime-format-for-xml
         static member date_to_xmlschema (dt:DateTime) =
-            //http://stackoverflow.com/questions/6314154/generate-datetime-format-for-xml
             dt.ToUniversalTime().ToString("o")
-            //TODO// static member xml_escape (x:string) =
+
+        ///Escape string for use in an XML doc.
+        static member xml_escape (x:string) = System.Security.SecurityElement.Escape(x)
+            
 
     let initSafeType (t:Type) = 
         let allowed =

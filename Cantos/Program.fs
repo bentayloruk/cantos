@@ -59,13 +59,10 @@ module Program =
             Dir.cleanDir (fun di -> di.Name = ".git") options.DestinationPath 
 
             //Run generators.
-            let generators = [ generateBlog; generateBooks; generateBasicSite; ]
-            let site, outputs =
-                generators
-                |> Seq.fold (fun (site, outputs) generator ->
-                    let outputs = Seq.concat [ outputs; generator site ]
-                    site, outputs
-                    ) (site, Seq.empty)
+            let outputs =
+                [ generateBlog; generateBooks; generateBasicSite; ]
+                |> Seq.map (fun g -> g site)
+                |> Seq.concat
 
             //Set up the DotLiquid transform (our default and main templating engine).
             let liquidTransform = 
@@ -74,11 +71,20 @@ module Program =
                 let rpf = renderParameters (IncludeFileSystem.Create(includesPath)) [typeof<JekyllFunctions>]
                 liquidContentTransformer rpf 
 
-            //Set up our two transform pipelines.
+            //Let people enhance the site meta.  Review: We do this due to streaming.  Too much?
+            //Blog needs to content transform, so provide one.
+            let contentTransform = markdownTransformer >> liquidTransform site.Meta
+            let site = 
+                let meta = 
+                    Seq.fold (fun siteMeta metaMaker ->
+                        let meta = metaMaker site siteMeta
+                        meta
+                        ) site.Meta [ (blogMeta contentTransform); ]
+                { site with Meta = meta }
+
+            //Transform and write content (new contentTransform with new Meta).
             let contentTransform = markdownTransformer >> liquidTransform site.Meta
             let siteTransform = layoutTransformer liquidTransform site
-
-            //Transform and write content.
             outputs
             |> Seq.map (contentTransform >> siteTransform)
             |> Seq.iter writeContent

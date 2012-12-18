@@ -3,6 +3,14 @@
 [<AutoOpen>]
 ///Module containing the "standard" generator functions.
 module Generators = 
+    open System
+
+    type Post = 
+        { Title:string
+          Url:string
+          Id:string
+          Content:string
+          Date:DateTime}
 
     open System
     open System.IO
@@ -15,9 +23,7 @@ module Generators =
         |> Seq.map (getContent >> outUri site)
         |> Seq.choose (|PublishedContent|_|) 
 
-    ///Generates blog post output.
-    let generateBlog (site:Site) = 
-        
+    let makePostContents (site:Site) = 
         let blogDir = site.InPath.CombineWithParts(["_posts"])
 
         if Directory.Exists(blogDir.LocalPathUnescaped) then
@@ -39,6 +45,40 @@ module Generators =
         else
             logInfo <| sprintf "Blog directory does not exist.  Skipping.  Looked in %s" blogDir.AbsolutePath
             Seq.empty
+
+    ///Generates blog post output.
+    let generateBlog (site:Site) = makePostContents site
+        
+    let (|BlogPostData|_|) (outUriRoot:Uri) (content:Content)  =
+        match content with 
+        | TextContent(x) ->
+            match x.Meta with 
+            | MetaString "title" title when x.UriOut.IsSome ->
+                use r = x.ReaderF()
+                let url = outUriRoot.MakeRelativeUri(x.UriOut.Value).ToString()
+                let post = { Title=title; Url=url; Id=url; Content=r.ReadToEnd(); Date=DateTime.Now }
+                Some(post)
+            | _ -> logDebug (sprintf "No title in potential blog post %s." <| x.Uri.ToString()); None
+        | _ -> None
+
+    ///Generates blog post output.
+    let blogMeta (transform:Content->Content) (site:Site) (meta:MetaMap) =
+
+        site.RegisterTemplateType(typeof<Post>)//Ugly, maybe use attributes instead.
+
+        let posts = 
+            makePostContents site
+            |> Seq.map transform
+            |> Seq.choose ((|BlogPostData|_|) site.OutPath)
+            |> Seq.map (box >> MetaValue.Object)
+            |> List.ofSeq
+
+        meta.Add("site",
+            match meta.Item("site") with
+            | Mapping(x) -> Mapping(x.Add("posts", MetaValue.List(posts)))
+            | _ -> failwith "site must exit."
+            )
+
 
 ///Used to create one or more books in the site.
 [<AutoOpen>]
@@ -70,8 +110,8 @@ module BookGenerator =
         | TextContent(x) ->
             let shouldLink = (|ValueOrDefault|) "toc-link" true x.Meta
             match x.Meta with
-            | StringValue "toc-title" t
-            | StringValue "title" t ->
+            | MetaString "toc-title" t
+            | MetaString "title" t ->
                 let href = "/" + rootUri.MakeRelativeUri(x.UriOut.Value).ToString()
                 Some({ Href = href; Title = t; EnableLink = shouldLink })
             | _ -> None
