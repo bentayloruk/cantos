@@ -48,7 +48,6 @@ module LiquidTransformer =
 
         ///Escape string for use in an XML doc.
         static member xml_escape (x:string) = System.Security.SecurityElement.Escape(x)
-            
 
     let initSafeType (t:Type) = 
         let allowed =

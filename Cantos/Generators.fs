@@ -107,7 +107,7 @@ module BookGenerator =
         | TextContent(x) ->
             let shouldLink = (|ValueOrDefault|) "toc-link" true x.Meta
             match x.Meta with
-            | MetaString "toc-title" t
+            | MetaString "toc-title" t//Use this if found, otherwise title...
             | MetaString "title" t ->
                 let href = "/" + rootUri.MakeRelativeUri(x.UriOut.Value).ToString()
                 Some({ Href = href; Title = t; EnableLink = shouldLink })
