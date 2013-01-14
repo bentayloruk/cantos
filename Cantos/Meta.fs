@@ -30,6 +30,8 @@ let metaToDic (metaMap:MetaMap) =
     //Always a Dictionary<string,objj>
     o :?> Dictionary<string,obj>
 
+let tryParseGood (isGood, _) = isGood 
+
 let (|MetaString|_|) key (meta:MetaMap) = 
     let value = meta.tryGetValue key
     match value with

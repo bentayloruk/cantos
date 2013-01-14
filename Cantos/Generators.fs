@@ -35,7 +35,7 @@ module Generators =
             |> Seq.choose (fun content ->
                 match (getUri content) with
                 | DateSlugFormat (date, slug) ->
-                    //TODO support he Jekyll style path outputs.
+                    //TODO support the Jekyll style path outputs.
                     let path = site.OutPath.CombineWithParts(["blog"; slug + ".html"])
                     Some(withUriOut content path)
                 | uri ->
@@ -54,9 +54,13 @@ module Generators =
         | TextContent(x) ->
             match x.Meta with 
             | MetaString "title" title when x.UriOut.IsSome ->
+                let dt = 
+                    match x.Meta with
+                    | MetaString("date") dt when tryParseGood (DateTime.TryParse(dt)) -> DateTime.Parse(dt)
+                    | _ -> DateTime.Now 
                 use r = x.ReaderF()
                 let url = outUriRoot.MakeRelativeUri(x.UriOut.Value).ToString()
-                let post = { Title=title; Url=url; Id=url; Content=r.ReadToEnd(); Date=DateTime.Now }
+                let post = { Title=title; Url=url; Id=url; Content=r.ReadToEnd(); Date=dt }
                 Some(post)
             | _ -> logDebug (sprintf "No title in potential blog post %s." <| x.Uri.ToString()); None
         | _ -> None
@@ -71,15 +75,24 @@ module Generators =
             |> Seq.map transform
             |> Seq.choose (|PublishedContent|_|)
             |> Seq.choose ((|BlogPostData|_|) site.OutPath)
-            |> Seq.map (box >> MetaValue.Object)
             |> List.ofSeq
+            |> List.sortBy (fun post -> post.Date)
 
-        meta.Add("site",
+        let boxedPosts = posts |> List.map (box >> MetaValue.Object)
+
+        let siteMeta = 
             match meta.Item("site") with
-            | Mapping(x) -> Mapping(x.Add("posts", MetaValue.List(posts)))
+            | Mapping(x) ->
+                let x = x.Add("posts", MetaValue.List(boxedPosts))
+                let dt = 
+                    match posts with
+                    | [] -> DateTime.MinValue
+                    | h::t -> h.Date
+                let x = x.Add("latestpostdatetime", MetaValue.DateTime(dt))
+                Mapping(x)
             | _ -> failwith "site must exit."
-            )
 
+        meta.Add("site", siteMeta)
 
 ///Used to create one or more books in the site.
 [<AutoOpen>]
