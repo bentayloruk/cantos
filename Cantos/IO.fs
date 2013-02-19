@@ -136,6 +136,10 @@ module Dir =
 
     ///Returns all the files in path.
     let getFiles path = fs.Directory.GetFiles(path)
+    
+    let removeTrailingPathSeparator (path:string) = 
+        if Path.endsWithDirSeparatorChar path then path.Substring(0, path.Length-1)
+        else path
 
     ///Gets all the files in directory path and all child directories of path (excluding filtered dirs).
     let descendantFilePaths path filter = 
@@ -151,8 +155,13 @@ module Dir =
     let execOnFileChange watchPath filterPaths exec = 
         //Filter out generated content paths (or we'll chase our tail when outPath is subDir of inPath).
         let wrappedExec (fsArgs:System.IO.FileSystemEventArgs) = 
+            let filterPaths = filterPaths |> Seq.map removeTrailingPathSeparator 
             if filterPaths |> Seq.exists fsArgs.FullPath.StartsWith then () 
-            else exec fsArgs
+            else
+                //Filter common temp files...(this is duplicated shit I need to sort out).
+                let extension = System.IO.Path.GetExtension(fsArgs.FullPath).ToLower()
+                if [".swp"; ".tmp"] |> Seq.exists (fun ignore -> extension = ignore) then ()
+                else exec fsArgs
             
         let fsw = new System.IO.FileSystemWatcher()
         fsw.Path <- watchPath 
