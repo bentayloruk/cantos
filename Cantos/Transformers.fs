@@ -136,6 +136,7 @@ module LayoutTransformer =
         ///Create a map of layouts below sourcePath.
         //TODO make it easier to get files with front matter.  This is too much mess.
         childFilePathsEx layoutPath
+        |> Seq.filter (fun path -> (Path.GetExtension(path)) <> ".swp")//Pesky Vim swap files.
         |> Seq.map getContent
         |> Seq.choose (|PublishedContent|_|) 
         |> Seq.choose (function
@@ -143,7 +144,7 @@ module LayoutTransformer =
                 let name = x.Uri.FileNameWithoutExtension
                 use r = x.ReaderF()
                 Some(name, { FileName = name ; Meta = x.Meta; Template = r.ReadToEnd()} )
-            | BinaryContent(_) -> None )
+            | BinaryContent(_) | ErrorContent(_) -> None )
         |> Map.ofSeq
 
     ///Transforms contents that have "layout" meta.

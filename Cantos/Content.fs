@@ -13,9 +13,17 @@ module Content =
     let htmlExtension = ".html"
     let markdownFileExtensions = [".md"; ".markdown";]
 
-    let (|Text|_|) = function | TextContent(x) -> Some(x) | BinaryContent(_) -> None
+    let (|Text|_|) = function | TextContent(x) -> Some(x) | _ -> None
 
-    let (|Meta|_|) = function | TextContent(x) -> Some(x.Meta) | BinaryContent(x) -> Some(x.Meta)
+    let (|Meta|_|) = function
+        | TextContent(x) -> Some(x.Meta) 
+        | BinaryContent(x) -> Some(x.Meta) 
+        | ErrorContent(x) -> Some(x.Meta)
+
+    let (|OKContent|_|) content =
+        match content with
+        | ErrorContent(x) -> None
+        | _ -> Some(content)
 
     ///Returns value of published
     let (|PublishedContent|_|) content =
@@ -28,18 +36,24 @@ module Content =
         | TextContent(x) ->
             if x.Uri.HasFileExtension(markdownFileExtensions) then Some(x) else None
         | BinaryContent(_) -> None
+        | ErrorContent(_) -> None
 
-    let getUri = function | TextContent(x) -> x.Uri | BinaryContent(x) -> x.Uri
+    let getUri = function 
+        | TextContent(x) -> x.Uri 
+        | BinaryContent(x) -> x.Uri
+        | ErrorContent(x) -> x.Uri
 
     let withMeta key value content =
         match content with
         | TextContent(x) -> TextContent({ x with Meta = x.Meta.Add(key, value) })
         | BinaryContent(x) -> BinaryContent({ x with Meta = x.Meta.Add(key, value) })
+        | ErrorContent(x) -> ErrorContent({ x with Meta = x.Meta.Add(key, value) })
 
     let withUriOut content uri =
         match content with
         | TextContent(x) -> TextContent({ x with UriOut = Some(uri) })
         | BinaryContent(x) -> BinaryContent({ x with UriOut = Some(uri) })
+        | ErrorContent(x) -> ErrorContent { x with UriOut = Some(uri) }
 
     ///Creates an outUri,Content pair.  Out uri is relative to site out path as was to site in path.
     let outUri site content =
@@ -72,18 +86,24 @@ module Content =
 
     //Creates Content for the file at path.
     let getContent path =
-        let hadFrontMatter, lineCount, meta = getFileFrontMatterMeta path
-        if hadFrontMatter then
-            let readContents = fun () -> File.offsetFileReader path lineCount 
-            TextContent({ Meta = meta; HadFrontMatter=true; ReaderF = readContents; Uri = Uri(path); UriOut = None})
-        else
-            //TODO 
-            BinaryContent({ Meta = Map.empty; Uri = Uri(path); UriOut = None; StreamF = fun () -> File.fileReadStream path; })
+        try
+            let hadFrontMatter, lineCount, meta = getFileFrontMatterMeta path
+            if hadFrontMatter then
+                let readContents = fun () -> File.offsetFileReader path lineCount 
+                TextContent({ Meta = meta; HadFrontMatter=true; ReaderF = readContents; Uri = Uri(path); UriOut = None})
+            else
+                //TODO 
+                BinaryContent({ Meta = Map.empty; Uri = Uri(path); UriOut = None; StreamF = fun () -> File.fileReadStream path; })
+        with
+        | ex ->
+            logError (sprintf "Failed to get content at path %s.  Error: %s" path ex.Message)
+            ErrorContent { Meta = Map.empty; Text = ex.Message; Uri = Uri(path); UriOut = None }
 
     let hasFrontMatter (content:Content) =
         match content with
         | TextContent(x) -> if x.HadFrontMatter then Some(content) else None
         | BinaryContent(_) -> None
+        | ErrorContent(_) -> None
 
     let textContent (content:Content) = match content with | TextContent(x) -> Some(content) | _ -> None
 

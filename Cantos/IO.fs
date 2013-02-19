@@ -147,3 +147,15 @@ module Dir =
     let currentDir = fs.Directory.GetCurrentDirectory()
 
     let exists path = fs.Directory.Exists(path)
+
+    let execOnFileChange path exec = 
+        let fsw = new System.IO.FileSystemWatcher()
+        fsw.Path <- path 
+        fsw.Changed.Add(exec)
+        fsw.Deleted.Add(exec)
+        fsw.Created.Add(exec)
+        fsw.Renamed.Add(exec)
+        fsw.NotifyFilter <- System.IO.NotifyFilters.LastWrite
+        fsw.EnableRaisingEvents <- true
+        fsw.IncludeSubdirectories <- true
+

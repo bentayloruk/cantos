@@ -126,7 +126,7 @@ module BookGenerator =
                 Some({ Href = href; Title = t; EnableLink = shouldLink })
             | _ -> None
             
-        | BinaryContent(_) -> None
+        | BinaryContent(_) | ErrorContent(_) -> None
 
     ///Creates a TOC for files in the given site path.
     let toBookOutputs (path:string) (site:Site) = 
@@ -158,6 +158,7 @@ module BookGenerator =
                                 match output with 
                                 | TextContent(x) -> outPath.WithExtension(htmlExtension)
                                 | BinaryContent(x) -> outPath
+                                | ErrorContent(_) -> outPath
                             withUriOut output outPath
 
                         match content with

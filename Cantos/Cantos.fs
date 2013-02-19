@@ -32,9 +32,17 @@ type BinaryContent =
       Uri:Uri
       UriOut:option<Uri> }
 
+type ErrorContent = {
+    Text:string
+    Meta:MetaMap
+    Uri:Uri
+    UriOut:option<Uri>
+    }
+
 type Content =
     | TextContent of TextContent 
     | BinaryContent of BinaryContent
+    | ErrorContent of ErrorContent
 
 type Site = 
     { InPath:Uri
