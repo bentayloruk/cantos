@@ -148,13 +148,18 @@ module Dir =
 
     let exists path = fs.Directory.Exists(path)
 
-    let execOnFileChange path exec = 
+    let execOnFileChange watchPath filterPaths exec = 
+        //Filter out generated content paths (or we'll chase our tail when outPath is subDir of inPath).
+        let wrappedExec (fsArgs:System.IO.FileSystemEventArgs) = 
+            if filterPaths |> Seq.exists fsArgs.FullPath.StartsWith then () 
+            else exec fsArgs
+            
         let fsw = new System.IO.FileSystemWatcher()
-        fsw.Path <- path 
-        fsw.Changed.Add(exec)
-        fsw.Deleted.Add(exec)
-        fsw.Created.Add(exec)
-        fsw.Renamed.Add(exec)
+        fsw.Path <- watchPath 
+        fsw.Changed.Add(wrappedExec)
+        fsw.Deleted.Add(wrappedExec)
+        fsw.Created.Add(wrappedExec)
+        fsw.Renamed.Add(wrappedExec)
         fsw.NotifyFilter <- System.IO.NotifyFilters.LastWrite
         fsw.EnableRaisingEvents <- true
         fsw.IncludeSubdirectories <- true

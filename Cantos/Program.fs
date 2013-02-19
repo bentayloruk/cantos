@@ -94,7 +94,7 @@ module Program =
 
         let options = optionsFromArgs argv;
         build options
-        Dir.execOnFileChange options.SourcePath (fun args -> build options)
+        Dir.execOnFileChange options.SourcePath [options.DestinationPath] (fun args -> build options)
         FireflyServer.runPreviewServer options.DestinationPath options.PreviewServerPort
         logInfo ("Hosting site at http://localhost:" + options.PreviewServerPort.ToString())
         let _ = Console.ReadLine()
