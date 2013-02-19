@@ -153,7 +153,7 @@ module Dir =
 
     let execOnFileChange watchPath filterPaths exec =
         let fsw = 
-            new System.IO.FileSystemWatcher (
+            new FileSystemWatcher (
                 Path = watchPath,
                 NotifyFilter = NotifyFilters.LastWrite,
                 EnableRaisingEvents = true,
