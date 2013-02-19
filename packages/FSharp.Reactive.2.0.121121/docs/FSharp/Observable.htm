@@ -1,0 +1,385 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Frameset//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-frameset.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <title>Observable -  Documentation</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
+    <link type="text/css" rel="stylesheet" href="../main.css"/>
+    <script type="text/javascript" src="../js/jquery-1.3.2.min.js"></script>
+    <script type="text/javascript" src="../js/jquery.scrollTo-min.js"></script>
+    <script type="text/javascript" src="../js/navigation.js"></script>
+    <script type="text/javascript" src="../js/example.js"></script>
+  </head>
+  <body><div id="namespaces">
+	<h2 class="fixed">Namespaces</h2>
+	<div class="scroll">
+		<ul>
+			<li>
+          <a href="../FSharp/index.htm" class="current">FSharp</a>
+      </li>
+		</ul>
+	</div>
+</div><div id="types">
+  <h2 class="fixed">Types in FSharp</h2>
+	<div class="scroll">
+		<ul>
+				<li>
+            <a href="../FSharp/Observable.htm" class="current">Observable</a>
+        </li>
+				<li>
+            <a href="../FSharp/ObservableBuilder.htm">ObservableBuilder</a>
+        </li>
+				<li>
+            <a href="../FSharp/Reactive.htm">Reactive</a>
+        </li>
+		</ul>
+	</div>
+</div>
+    <div class="header">
+		<p class="class"><strong>Type</strong> Observable</p>
+		<p><strong>Namespace</strong> FSharp</p>
+	</div>
+    <div class="sub-header">
+		
+		
+			<h3 class="section">Methods</h3>
+			<ul>
+				<li><a href="../FSharp/Observable.htm#amb``1">amb&lt;a&gt;</a></li>
+				<li><a href="../FSharp/Observable.htm#bind``2">bind&lt;a, b&gt;</a></li>
+				<li><a href="../FSharp/Observable.htm#both``2">both&lt;a, b&gt;</a></li>
+				<li><a href="../FSharp/Observable.htm#catch``1">catch&lt;a&gt;</a></li>
+				<li><a href="../FSharp/Observable.htm#combineLatest``2">combineLatest&lt;a, b&gt;</a></li>
+				<li><a href="../FSharp/Observable.htm#concat``1">concat&lt;a&gt;</a></li>
+				<li><a href="../FSharp/Observable.htm#count``1">count&lt;a&gt;</a></li>
+				<li><a href="../FSharp/Observable.htm#create``1">create&lt;a&gt;</a></li>
+				<li><a href="../FSharp/Observable.htm#empty``1">empty&lt;a&gt;</a></li>
+				<li><a href="../FSharp/Observable.htm#exists``1">exists&lt;a&gt;</a></li>
+				<li><a href="../FSharp/Observable.htm#filter``1">filter&lt;a&gt;</a></li>
+				<li><a href="../FSharp/Observable.htm#fold``2">fold&lt;a, b&gt;</a></li>
+				<li><a href="../FSharp/Observable.htm#fromEventPattern``1">fromEventPattern&lt;a&gt;</a></li>
+				<li><a href="../FSharp/Observable.htm#head``1">head&lt;a&gt;</a></li>
+				<li><a href="../FSharp/Observable.htm#isEmpty``1">isEmpty&lt;a&gt;</a></li>
+				<li><a href="../FSharp/Observable.htm#map``2">map&lt;a, b&gt;</a></li>
+				<li><a href="../FSharp/Observable.htm#mapi``2">mapi&lt;a, b&gt;</a></li>
+				<li><a href="../FSharp/Observable.htm#merge``1">merge&lt;a&gt;</a></li>
+				<li><a href="../FSharp/Observable.htm#perform``1">perform&lt;a&gt;</a></li>
+				<li><a href="../FSharp/Observable.htm#performFinally``1">performFinally&lt;a&gt;</a></li>
+				<li><a href="../FSharp/Observable.htm#range">range</a></li>
+				<li><a href="../FSharp/Observable.htm#reduce``1">reduce&lt;a&gt;</a></li>
+				<li><a href="../FSharp/Observable.htm#sample``1">sample&lt;a&gt;</a></li>
+				<li><a href="../FSharp/Observable.htm#skip``1">skip&lt;a&gt;</a></li>
+				<li><a href="../FSharp/Observable.htm#skipWhile``1">skipWhile&lt;a&gt;</a></li>
+				<li><a href="../FSharp/Observable.htm#subscribe``1">subscribe&lt;a&gt;</a></li>
+				<li><a href="../FSharp/Observable.htm#take``1">take&lt;a&gt;</a></li>
+				<li><a href="../FSharp/Observable.htm#takeWhile``1">takeWhile&lt;a&gt;</a></li>
+				<li><a href="../FSharp/Observable.htm#throttle``1">throttle&lt;a&gt;</a></li>
+				<li><a href="../FSharp/Observable.htm#toEnumerable``1">toEnumerable&lt;a&gt;</a></li>
+				<li><a href="../FSharp/Observable.htm#toObservable``1">toObservable&lt;a&gt;</a></li>
+				<li><a href="../FSharp/Observable.htm#zip``1">zip&lt;a&gt;</a></li>
+			</ul>
+		
+		
+	</div>
+	
+	
+	
+	<h3 class="section">Public static methods</h3>
+	
+	<div id="amb``1" class="method">
+		<h4><span title="System.IObservable<a>">IObservable&lt;a&gt;</span> <strong>amb&lt;a&gt;</strong>(<span title="System.IObservable<a>">IObservable&lt;a&gt;</span> second, <span title="System.IObservable<a>">IObservable&lt;a&gt;</span> first)</h4>
+		<div class="content">Returns the observable sequence that reacts first 
+
+
+
+      
+    </div>
+	</div>
+	<div id="bind``2" class="method">
+		<h4><span title="System.IObservable<b>">IObservable&lt;b&gt;</span> <strong>bind&lt;a, b&gt;</strong>(<span title="Microsoft.FSharp.Core.FSharpFunc<a, IObservable<b>>">FSharpFunc&lt;a, IObservable&lt;b&gt;&gt;</span> f, <span title="System.IObservable<a>">IObservable&lt;a&gt;</span> m)</h4>
+		<div class="content">
+
+
+
+      
+    </div>
+	</div>
+	<div id="both``2" class="method">
+		<h4><span title="System.Reactive.Joins.Pattern<b, a>">Pattern&lt;b, a&gt;</span> <strong>both&lt;a, b&gt;</strong>(<span title="System.IObservable<a>">IObservable&lt;a&gt;</span> second, <span title="System.IObservable<b>">IObservable&lt;b&gt;</span> first)</h4>
+		<div class="content">Matches when both observable sequences have an available value 
+
+
+
+      
+    </div>
+	</div>
+	<div id="catch``1" class="method">
+		<h4><span title="System.IObservable<a>">IObservable&lt;a&gt;</span> <strong>catch&lt;a&gt;</strong>(<span title="System.IObservable<a>">IObservable&lt;a&gt;</span> second, <span title="System.IObservable<a>">IObservable&lt;a&gt;</span> first)</h4>
+		<div class="content">Continues an observable sequence that is terminated
+by an exception with the next observable sequence. 
+
+
+
+      
+    </div>
+	</div>
+	<div id="combineLatest``2" class="method">
+		<h4><span title="System.IObservable<Tuple<b, a>>">IObservable&lt;Tuple&lt;b, a&gt;&gt;</span> <strong>combineLatest&lt;a, b&gt;</strong>(<span title="System.IObservable<a>">IObservable&lt;a&gt;</span> second, <span title="System.IObservable<b>">IObservable&lt;b&gt;</span> first)</h4>
+		<div class="content">Merges two observable sequences into one observable sequence
+whenever one of the observable sequences has a new value
+===> More results than zip 
+
+
+
+      
+    </div>
+	</div>
+	<div id="concat``1" class="method">
+		<h4><span title="System.IObservable<a>">IObservable&lt;a&gt;</span> <strong>concat&lt;a&gt;</strong>(<span title="System.IObservable<a>">IObservable&lt;a&gt;</span> second, <span title="System.IObservable<a>">IObservable&lt;a&gt;</span> first)</h4>
+		<div class="content">Concats (flattens) an observable of observables into an observable
+===> Observable.SelectMany(observable, Func<_,_>(fun (x:IObservable<'a>) -> x)) 
+
+
+
+      
+    </div>
+	</div>
+	<div id="count``1" class="method">
+		<h4><span title="System.IObservable<int>">IObservable&lt;int&gt;</span> <strong>count&lt;a&gt;</strong>(<span title="System.IObservable<a>">IObservable&lt;a&gt;</span> source)</h4>
+		<div class="content">Counts the elements 
+
+
+
+      
+    </div>
+	</div>
+	<div id="create``1" class="method">
+		<h4><span title="System.IObservable<a>">IObservable&lt;a&gt;</span> <strong>create&lt;a&gt;</strong>(<span title="Microsoft.FSharp.Core.FSharpFunc<IObserver<a>, FSharpFunc<Unit, Unit>>">FSharpFunc&lt;IObserver&lt;a&gt;, FSharpFunc&lt;Unit, Unit&gt;&gt;</span> f)</h4>
+		<div class="content">
+
+
+
+      
+    </div>
+	</div>
+	<div id="empty``1" class="method">
+		<h4><span title="System.IObservable<a>">IObservable&lt;a&gt;</span> <strong>empty&lt;a&gt;</strong>()</h4>
+		<div class="content">Generates an empty observable 
+
+
+
+      
+    </div>
+	</div>
+	<div id="exists``1" class="method">
+		<h4><span title="System.bool">bool</span> <strong>exists&lt;a&gt;</strong>(<span title="Microsoft.FSharp.Core.FSharpFunc<a, bool>">FSharpFunc&lt;a, bool&gt;</span> f, <span title="System.IObservable<a>">IObservable&lt;a&gt;</span> source)</h4>
+		<div class="content">
+
+
+
+      
+    </div>
+	</div>
+	<div id="filter``1" class="method">
+		<h4><span title="System.IObservable<a>">IObservable&lt;a&gt;</span> <strong>filter&lt;a&gt;</strong>(<span title="Microsoft.FSharp.Core.FSharpFunc<a, bool>">FSharpFunc&lt;a, bool&gt;</span> f, <span title="System.IObservable<a>">IObservable&lt;a&gt;</span> source)</h4>
+		<div class="content">
+
+
+
+      
+    </div>
+	</div>
+	<div id="fold``2" class="method">
+		<h4><span title="System.IObservable<a>">IObservable&lt;a&gt;</span> <strong>fold&lt;a, b&gt;</strong>(<span title="Microsoft.FSharp.Core.FSharpFunc<a, FSharpFunc<b, a>>">FSharpFunc&lt;a, FSharpFunc&lt;b, a&gt;&gt;</span> f, <span title="FSharp.a">a</span> seed, <span title="System.IObservable<b>">IObservable&lt;b&gt;</span> source)</h4>
+		<div class="content">
+
+
+
+      
+    </div>
+	</div>
+	<div id="fromEventPattern``1" class="method">
+		<h4><span title="System.IObservable<EventPattern<EventArgs>>">IObservable&lt;EventPattern&lt;EventArgs&gt;&gt;</span> <strong>fromEventPattern&lt;a&gt;</strong>(<span title="System.object">object</span> target, <span title="System.string">string</span> eventName)</h4>
+		<div class="content">Generates an observable from an IEvent<_> as an EventPattern. 
+
+
+
+      
+    </div>
+	</div>
+	<div id="head``1" class="method">
+		<h4><span title="System.IObservable<a>">IObservable&lt;a&gt;</span> <strong>head&lt;a&gt;</strong>(<span title="System.IObservable<a>">IObservable&lt;a&gt;</span> obs)</h4>
+		<div class="content">Takes the head of the elements 
+
+
+
+      
+    </div>
+	</div>
+	<div id="isEmpty``1" class="method">
+		<h4><span title="System.bool">bool</span> <strong>isEmpty&lt;a&gt;</strong>(<span title="System.IObservable<a>">IObservable&lt;a&gt;</span> source)</h4>
+		<div class="content">Determines whether the given observable is empty 
+
+
+
+      
+    </div>
+	</div>
+	<div id="map``2" class="method">
+		<h4><span title="System.IObservable<b>">IObservable&lt;b&gt;</span> <strong>map&lt;a, b&gt;</strong>(<span title="Microsoft.FSharp.Core.FSharpFunc<a, b>">FSharpFunc&lt;a, b&gt;</span> f, <span title="System.IObservable<a>">IObservable&lt;a&gt;</span> source)</h4>
+		<div class="content">
+
+
+
+      
+    </div>
+	</div>
+	<div id="mapi``2" class="method">
+		<h4><span title="System.IObservable<b>">IObservable&lt;b&gt;</span> <strong>mapi&lt;a, b&gt;</strong>(<span title="Microsoft.FSharp.Core.FSharpFunc<int, FSharpFunc<a, b>>">FSharpFunc&lt;int, FSharpFunc&lt;a, b&gt;&gt;</span> f, <span title="System.IObservable<a>">IObservable&lt;a&gt;</span> source)</h4>
+		<div class="content">
+
+
+
+      
+    </div>
+	</div>
+	<div id="merge``1" class="method">
+		<h4><span title="System.IObservable<a>">IObservable&lt;a&gt;</span> <strong>merge&lt;a&gt;</strong>(<span title="System.IObservable<a>">IObservable&lt;a&gt;</span> second, <span title="System.IObservable<a>">IObservable&lt;a&gt;</span> first)</h4>
+		<div class="content">Merges the two observables 
+
+
+
+      
+    </div>
+	</div>
+	<div id="perform``1" class="method">
+		<h4><span title="System.IObservable<a>">IObservable&lt;a&gt;</span> <strong>perform&lt;a&gt;</strong>(<span title="Microsoft.FSharp.Core.FSharpFunc<a, Unit>">FSharpFunc&lt;a, Unit&gt;</span> f, <span title="System.IObservable<a>">IObservable&lt;a&gt;</span> source)</h4>
+		<div class="content">
+
+
+
+      
+    </div>
+	</div>
+	<div id="performFinally``1" class="method">
+		<h4><span title="System.IObservable<a>">IObservable&lt;a&gt;</span> <strong>performFinally&lt;a&gt;</strong>(<span title="Microsoft.FSharp.Core.FSharpFunc<Unit, Unit>">FSharpFunc&lt;Unit, Unit&gt;</span> f, <span title="System.IObservable<a>">IObservable&lt;a&gt;</span> source)</h4>
+		<div class="content">
+
+
+
+      
+    </div>
+	</div>
+	<div id="range" class="method">
+		<h4><span title="System.IObservable<int>">IObservable&lt;int&gt;</span> <strong>range</strong>(<span title="System.int">int</span> start, <span title="System.int">int</span> count)</h4>
+		<div class="content">Creates a range as an observable 
+
+
+
+      
+    </div>
+	</div>
+	<div id="reduce``1" class="method">
+		<h4><span title="System.IObservable<a>">IObservable&lt;a&gt;</span> <strong>reduce&lt;a&gt;</strong>(<span title="Microsoft.FSharp.Core.FSharpFunc<a, FSharpFunc<a, a>>">FSharpFunc&lt;a, FSharpFunc&lt;a, a&gt;&gt;</span> f, <span title="System.IObservable<a>">IObservable&lt;a&gt;</span> source)</h4>
+		<div class="content">
+
+
+
+      
+    </div>
+	</div>
+	<div id="sample``1" class="method">
+		<h4><span title="System.IObservable<a>">IObservable&lt;a&gt;</span> <strong>sample&lt;a&gt;</strong>(<span title="System.TimeSpan">TimeSpan</span> interval, <span title="System.IObservable<a>">IObservable&lt;a&gt;</span> source)</h4>
+		<div class="content">Samples the observable at the given interval 
+
+
+
+      
+    </div>
+	</div>
+	<div id="skip``1" class="method">
+		<h4><span title="System.IObservable<a>">IObservable&lt;a&gt;</span> <strong>skip&lt;a&gt;</strong>(<span title="System.int">int</span> n, <span title="System.IObservable<a>">IObservable&lt;a&gt;</span> source)</h4>
+		<div class="content">Skips n elements 
+
+
+
+      
+    </div>
+	</div>
+	<div id="skipWhile``1" class="method">
+		<h4><span title="System.IObservable<a>">IObservable&lt;a&gt;</span> <strong>skipWhile&lt;a&gt;</strong>(<span title="Microsoft.FSharp.Core.FSharpFunc<a, bool>">FSharpFunc&lt;a, bool&gt;</span> f, <span title="System.IObservable<a>">IObservable&lt;a&gt;</span> source)</h4>
+		<div class="content">
+
+
+
+      
+    </div>
+	</div>
+	<div id="subscribe``1" class="method">
+		<h4><span title="System.IDisposable">IDisposable</span> <strong>subscribe&lt;a&gt;</strong>(<span title="Microsoft.FSharp.Core.FSharpFunc<a, Unit>">FSharpFunc&lt;a, Unit&gt;</span> onNext, <span title="Microsoft.FSharp.Core.FSharpFunc<Exception, Unit>">FSharpFunc&lt;Exception, Unit&gt;</span> onError, <span title="Microsoft.FSharp.Core.FSharpFunc<Unit, Unit>">FSharpFunc&lt;Unit, Unit&gt;</span> onCompleted, <span title="System.IObservable<a>">IObservable&lt;a&gt;</span> observable)</h4>
+		<div class="content">
+
+
+
+      
+    </div>
+	</div>
+	<div id="take``1" class="method">
+		<h4><span title="System.IObservable<a>">IObservable&lt;a&gt;</span> <strong>take&lt;a&gt;</strong>(<span title="System.int">int</span> n, <span title="System.IObservable<a>">IObservable&lt;a&gt;</span> source)</h4>
+		<div class="content">Takes n elements 
+
+
+
+      
+    </div>
+	</div>
+	<div id="takeWhile``1" class="method">
+		<h4><span title="System.IObservable<a>">IObservable&lt;a&gt;</span> <strong>takeWhile&lt;a&gt;</strong>(<span title="Microsoft.FSharp.Core.FSharpFunc<a, bool>">FSharpFunc&lt;a, bool&gt;</span> f, <span title="System.IObservable<a>">IObservable&lt;a&gt;</span> source)</h4>
+		<div class="content">
+
+
+
+      
+    </div>
+	</div>
+	<div id="throttle``1" class="method">
+		<h4><span title="System.IObservable<a>">IObservable&lt;a&gt;</span> <strong>throttle&lt;a&gt;</strong>(<span title="System.TimeSpan">TimeSpan</span> interval, <span title="System.IObservable<a>">IObservable&lt;a&gt;</span> source)</h4>
+		<div class="content">Throttles the observable for the given interval 
+
+
+
+      
+    </div>
+	</div>
+	<div id="toEnumerable``1" class="method">
+		<h4><span title="System.Collections.Generic.IEnumerable<a>">IEnumerable&lt;a&gt;</span> <strong>toEnumerable&lt;a&gt;</strong>(<span title="System.IObservable<a>">IObservable&lt;a&gt;</span> source)</h4>
+		<div class="content">Converts an observable into a seq 
+
+
+
+      
+    </div>
+	</div>
+	<div id="toObservable``1" class="method">
+		<h4><span title="System.IObservable<a>">IObservable&lt;a&gt;</span> <strong>toObservable&lt;a&gt;</strong>(<span title="System.Collections.Generic.IEnumerable<a>">IEnumerable&lt;a&gt;</span> source)</h4>
+		<div class="content">Converts a seq into an observable 
+
+
+
+      
+    </div>
+	</div>
+	<div id="zip``1" class="method">
+		<h4><span title="System.IObservable<Tuple<a, a>>">IObservable&lt;Tuple&lt;a, a&gt;&gt;</span> <strong>zip&lt;a&gt;</strong>(<span title="System.IObservable<a>">IObservable&lt;a&gt;</span> second, <span title="System.IObservable<a>">IObservable&lt;a&gt;</span> first)</h4>
+		<div class="content">Merges two observable sequences into one observable sequence 
+
+
+
+      
+    </div>
+	</div>
+	
+	<div id="footer">
+  <p>Based on v0.0.0.0 of </p>
+  <p>Generated by <a href="http://docu.jagregory.com">docu</a></p>
+</div>
+  </body>
+</html>

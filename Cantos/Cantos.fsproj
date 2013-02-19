@@ -74,6 +74,10 @@
       <HintPath>..\packages\Firefly.0.4\lib\net40\Firefly.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="FSharp.Reactive">
+      <HintPath>..\packages\FSharp.Reactive.2.0.121121\lib\net40\FSharp.Reactive.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="Gate">
       <HintPath>..\packages\Gate.0.3.6\lib\net40\Gate.dll</HintPath>
       <Private>True</Private>
@@ -93,6 +97,18 @@
       <HintPath>..\packages\System.IO.Abstractions.1.4.0.35\lib\net35\System.IO.Abstractions.dll</HintPath>
     </Reference>
     <Reference Include="System.Numerics" />
+    <Reference Include="System.Reactive.Core">
+      <HintPath>..\packages\FSharp.Reactive.2.0.121121\lib\net40\System.Reactive.Core.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Reactive.Interfaces">
+      <HintPath>..\packages\FSharp.Reactive.2.0.121121\lib\net40\System.Reactive.Interfaces.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Reactive.Linq">
+      <HintPath>..\packages\FSharp.Reactive.2.0.121121\lib\net40\System.Reactive.Linq.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="YamlDotNet.Core">
       <HintPath>..\packages\YamlDotNet.Core.1.1.16\lib\YamlDotNet.Core.dll</HintPath>
     </Reference>
