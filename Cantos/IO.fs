@@ -98,7 +98,10 @@ module File =
 [<RequireQualifiedAccess>]
 module Dir =
 
+    open System
+    open System.IO
     open FileSystem
+    open FSharp.Reactive
 
     let getDirs path = fs.Directory.GetDirectories(path)
 
@@ -152,24 +155,20 @@ module Dir =
 
     let exists path = fs.Directory.Exists(path)
 
-    let execOnFileChange watchPath filterPaths exec = 
-        //Filter out generated content paths (or we'll chase our tail when outPath is subDir of inPath).
-        let wrappedExec (fsArgs:System.IO.FileSystemEventArgs) = 
-            let filterPaths = filterPaths |> Seq.map removeTrailingPathSeparator 
-            if filterPaths |> Seq.exists fsArgs.FullPath.StartsWith then () 
-            else
-                //Filter common temp files...(this is duplicated shit I need to sort out).
-                let extension = System.IO.Path.GetExtension(fsArgs.FullPath).ToLower()
-                if [".swp"; ".tmp"] |> Seq.exists (fun ignore -> extension = ignore) then ()
-                else exec fsArgs
-            
-        let fsw = new System.IO.FileSystemWatcher()
-        fsw.Path <- watchPath 
-        fsw.Changed.Add(wrappedExec)
-        fsw.Deleted.Add(wrappedExec)
-        fsw.Created.Add(wrappedExec)
-        fsw.Renamed.Add(wrappedExec)
-        fsw.NotifyFilter <- System.IO.NotifyFilters.LastWrite
-        fsw.EnableRaisingEvents <- true
-        fsw.IncludeSubdirectories <- true
+    let execOnFileChange watchPath filterPaths exec =
+        let fsw = 
+            new FileSystemWatcher (
+                Path = watchPath,
+                NotifyFilter = NotifyFilters.LastWrite,
+                EnableRaisingEvents = true,
+                IncludeSubdirectories = true
+            )
+
+        let merge (observables: IObservable<_> list) =
+            List.fold Observable.merge (List.head observables) (List.tail observables)
+
+        merge [ fsw.Changed; fsw.Deleted; fsw.Created; fsw.Renamed |> Observable.map (fun x -> x :> FileSystemEventArgs) ]
+            |> Observable.filter (fun args -> not (filterPaths |> Seq.exists args.FullPath.StartsWith))
+            |> Observable.throttle (TimeSpan.FromSeconds 1.) 
+            |> Observable.add exec
 
