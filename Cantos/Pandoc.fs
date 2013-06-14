@@ -14,7 +14,10 @@ let findPandoc () =
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), pandocFolder); 
         ]
     progFilePaths 
-    |> Seq.map (fun path -> Directory.GetFileSystemEntries(path, "pandoc.exe", SearchOption.AllDirectories)) 
+    |> Seq.map (fun path -> 
+                            match Directory.Exists(path) with
+                            | true -> Directory.GetFileSystemEntries(path, "pandoc.exe", SearchOption.AllDirectories)
+                            | false -> [||]) 
     |> Seq.concat
     |> List.ofSeq
     |> function | [] -> None | h::_ -> printfn "Found pandoc here %s" h; Some(h)
