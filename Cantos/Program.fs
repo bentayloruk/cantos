@@ -29,14 +29,12 @@ module Program =
     //Convert args to our SiteOptions.
     //Review: maybe straight to Site?
     let argsToOptions (args:ArgParseResults<CantosArg>) =
+
         let fixPath = Path.getFullPath >> ensureEndsWithDirSeparatorChar
-        let inputPath =
-            args.GetResult <@ InputPath @>
-            |> fixPath
-        let outputPath =
-            args.GetResult (<@ OutputPath @>, Path.combine [| inputPath; "_site" |])
-            |> fixPath
+        let inputPath = args.GetResult <@ InputPath @> |> fixPath
+        let outputPath = args.GetResult (<@ OutputPath @>, Path.combine [| inputPath; "_site" |]) |> fixPath
         let port = args.GetResult (<@ WebServerPort @>, 8888)
+       
         {
             SourcePath = inputPath
             DestinationPath = outputPath
@@ -44,13 +42,11 @@ module Program =
         }
 
     //Bit of pre-amble...
-    let logStart site = 
-        let msg =
-            sprintf """[ Cantos - F#st and furious static website generator ]
-Input Path: %s
-Output Path: %s
-DateTime: %s""" (site.InPath.ToString()) (site.OutPath.ToString()) (DateTime.Now.ToString()) 
-        logInfo msg 
+    let logBuild site = 
+        logInfo "[ Cantos - F#st and furious static website generator ]"
+        logInfo <| sprintf "Input Path: %s" (site.InPath.ToString())
+        logInfo <| sprintf "Output Path: %s" (site.OutPath.ToString())
+        logInfo <| sprintf "DateTime: %s" (DateTime.Now.ToString()) 
 
     //The main site build function.
     let buildSite options = 
@@ -68,15 +64,15 @@ DateTime: %s""" (site.InPath.ToString()) (site.OutPath.ToString()) (DateTime.Now
             RegisterTemplateType = initSafeType
             }
         
-        logStart site 
+        logBuild site 
 
-        //Clean output directory.
         Dir.cleanDir (fun di -> di.Name = ".git") options.DestinationPath 
 
         //Run generators.
         let outputs =
+            let generate g = g site
             [ generateBlog; generateBooks; generateBasicSite; ]
-            |> Seq.map (fun g -> g site)
+            |> Seq.map generate 
             |> Seq.concat
 
         //Set up the DotLiquid transform (our default and main templating engine).
@@ -100,6 +96,7 @@ DateTime: %s""" (site.InPath.ToString()) (site.OutPath.ToString()) (DateTime.Now
         //Transform and write content (new contentTransform with new Meta).
         let contentTransform = markdownTransformer >> liquidTransform site.Meta
         let siteTransform = layoutTransformer liquidTransform site
+
         outputs
         |> Seq.choose (|OKContent|_|)
         |> Seq.map (contentTransform >> siteTransform)
@@ -107,19 +104,30 @@ DateTime: %s""" (site.InPath.ToString()) (site.OutPath.ToString()) (DateTime.Now
 
         logSuccess (sprintf "Success.  Output written to:\n%s.\n" options.DestinationPath)
 
+    //Watch the input and build if changes.
+    let buildOnChange site = 
+        let exec = fun args -> buildSite site
+        let watchPath = site.SourcePath
+        let filterPaths = [site.DestinationPath]
+        Dir.execOnFileChange watchPath filterPaths exec
+
+    //Spin up a preview web server.
+    let previewSite site = 
+        FireflyServer.runPreviewServer site.DestinationPath site.PreviewServerPort
+        logInfo ("Hosting site at http://localhost:" + site.PreviewServerPort.ToString())
+
+    let parseSiteOptions argv = 
+        //This will throw if args are wrong.
+        let argParser = UnionArgParser<CantosArg>()
+        argParser.Parse argv |> argsToOptions
+
     [<EntryPoint>]
-    //Entry point for Cantos.
     let main argv = 
         try
-            //Gets valid options or throws.
-            let siteOptions = 
-                let argParser = UnionArgParser<CantosArg>()
-                argParser.Parse argv |> argsToOptions
-            //Let's get our build on.
+            let siteOptions = parseSiteOptions argv
             buildSite siteOptions
-            Dir.execOnFileChange siteOptions.SourcePath [siteOptions.DestinationPath] (fun args -> buildSite siteOptions)
-            FireflyServer.runPreviewServer siteOptions.DestinationPath siteOptions.PreviewServerPort
-            logInfo ("Hosting site at http://localhost:" + siteOptions.PreviewServerPort.ToString())
+            buildOnChange siteOptions
+            previewSite siteOptions
             let _ = Console.ReadLine()
             0
         with
