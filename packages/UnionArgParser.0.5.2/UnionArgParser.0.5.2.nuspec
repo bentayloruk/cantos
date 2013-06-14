@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+  <metadata>
+    <id>UnionArgParser</id>
+    <version>0.5.2</version>
+    <title>UnionArgParser</title>
+    <authors>Eirik Tsarpalis</authors>
+    <owners>Eirik Tsarpalis</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Declarative command line argument and configuration parser for F#.  Allows straightforward definition of configuration parsing schema through the use of Discriminated Unions. 
+
+For more information please see http://egtsrp.blogspot.gr/2013/03/a-declarative-argument-parser-for-f.html</description>
+    <releaseNotes>Provided "as is" with no express or implied warranty.</releaseNotes>
+    <tags>F# serialization</tags>
+    <references>
+      <reference file="UnionArgParser.dll" />
+    </references>
+  </metadata>
+</package>

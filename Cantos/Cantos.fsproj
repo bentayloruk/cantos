@@ -26,7 +26,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DocumentationFile>bin\Debug\Cantos.XML</DocumentationFile>
     <Prefer32Bit>true</Prefer32Bit>
-    <StartArguments>../../../Cantos.SampleSite</StartArguments>
+    <StartArguments>--inputpath "../../../Cantos.SampleSite"</StartArguments>
     <Externalconsole>True</Externalconsole>
     <Commandlineparameters>../../../Cantos.SampleSite</Commandlineparameters>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
@@ -107,6 +107,10 @@
     </Reference>
     <Reference Include="System.Reactive.Linq">
       <HintPath>..\packages\FSharp.Reactive.2.0.121121\lib\net40\System.Reactive.Linq.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="UnionArgParser">
+      <HintPath>..\packages\UnionArgParser.0.5.2\lib\net45\UnionArgParser.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="YamlDotNet.Core">

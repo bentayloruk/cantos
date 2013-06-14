@@ -2,53 +2,71 @@
 
 open System
 open System.IO
+open UnionArgParser
 
 module Program =
 
-    ///App options.
-    type options =
-        { SourcePath:string
-          DestinationPath:string
-          PreviewServerPort:int } 
+    //Command line argument definitions.
+    type CantosArg =
+        | [<Mandatory>] InputPath of string
+        | OutputPath of string
+        | WebServerPort of int
+    with
+        interface IArgParserTemplate with
+            member __.Usage = 
+                match __ with
+                | InputPath _ -> "specify a site input path"
+                | OutputPath _ -> "specify a site output path"
+                | WebServerPort _ -> "specify the web server preview port"
 
-    ///Very basic args for now!
-    let optionsFromArgs (args:array<string>) =
+    //Site options.
+    type SiteOptions = {
+        SourcePath:string
+        DestinationPath:string
+        PreviewServerPort:int
+        } 
 
+    //Convert args to our SiteOptions.
+    //Review: maybe straight to Site?
+    let argsToOptions (args:ArgParseResults<CantosArg>) =
         let fixPath = Path.getFullPath >> ensureEndsWithDirSeparatorChar
-        let indexedArgOrF i f = if args.Length >= i+1 then args.[i] else f() 
-
-        let srcPath = indexedArgOrF 0 (fun () -> "") |> fixPath
-        let destPath = indexedArgOrF 1 (fun () -> Path.combine [| srcPath; "_site" |]) |> fixPath
-        if not (Dir.exists srcPath) then raiseArgEx (sprintf "Source path does not exist.\n%s" srcPath) "Source Path"
-
-        { SourcePath = srcPath;
-          DestinationPath = destPath 
-          PreviewServerPort = 8888 }
+        let inputPath =
+            args.GetResult <@ InputPath @>
+            |> fixPath
+        let outputPath =
+            args.GetResult (<@ OutputPath @>, Path.combine [| inputPath; "_site" |])
+            |> fixPath
+        let port = args.GetResult (<@ WebServerPort @>, 8888)
+        {
+            SourcePath = inputPath
+            DestinationPath = outputPath
+            PreviewServerPort = port
+        }
 
     //Bit of pre-amble...
     let logStart site = 
-        logInfo "[ Cantos - F#st and furious static website generator ]"
-        logInfo (sprintf "InPath: %s" (site.InPath.ToString()))
-        logInfo (sprintf "OutPath: %s" (site.OutPath.ToString()))
-        logInfo (sprintf "DateTime: %s" (DateTime.Now.ToString()))
+        let msg =
+            sprintf """[ Cantos - F#st and furious static website generator ]
+Input Path: %s
+Output Path: %s
+DateTime: %s""" (site.InPath.ToString()) (site.OutPath.ToString()) (DateTime.Now.ToString()) 
+        logInfo msg 
 
-    let build options = 
-
+    //The main site build function.
+    let buildSite options = 
         (*
         For now we are running Cantos with some defaults.
         Plan this being done from an fsx script (FAKE style), command line or YAML config.  One to discuss.
         *)
-
         //TODO config/options is bit of mess.  Clean this up when trying fsx approach.
-
         let siteMeta = MetaValue.Mapping(["time", MetaValue.DateTime(DateTime.Now)] |> Map.ofList)
 
-        let site =
-            { InPath = Uri(options.SourcePath)
-              OutPath = Uri(options.DestinationPath)
-              Meta = [ "site", siteMeta ] |> Map.ofList
-              RegisterTemplateType = initSafeType
-              }
+        let site = {
+            InPath = Uri(options.SourcePath)
+            OutPath = Uri(options.DestinationPath)
+            Meta = [ "site", siteMeta ] |> Map.ofList
+            RegisterTemplateType = initSafeType
+            }
         
         logStart site 
 
@@ -90,15 +108,23 @@ module Program =
         logSuccess (sprintf "Success.  Output written to:\n%s.\n" options.DestinationPath)
 
     [<EntryPoint>]
+    //Entry point for Cantos.
     let main argv = 
-
-        let options = optionsFromArgs argv;
-        build options
-        Dir.execOnFileChange options.SourcePath [options.DestinationPath] (fun args -> build options)
-        FireflyServer.runPreviewServer options.DestinationPath options.PreviewServerPort
-        logInfo ("Hosting site at http://localhost:" + options.PreviewServerPort.ToString())
-        let _ = Console.ReadLine()
-        0
-
+        try
+            //Gets valid options or throws.
+            let siteOptions = 
+                let argParser = UnionArgParser<CantosArg>()
+                argParser.Parse argv |> argsToOptions
+            //Let's get our build on.
+            buildSite siteOptions
+            Dir.execOnFileChange siteOptions.SourcePath [siteOptions.DestinationPath] (fun args -> buildSite siteOptions)
+            FireflyServer.runPreviewServer siteOptions.DestinationPath siteOptions.PreviewServerPort
+            logInfo ("Hosting site at http://localhost:" + siteOptions.PreviewServerPort.ToString())
+            let _ = Console.ReadLine()
+            0
+        with
+        | ex ->
+            logError ex.Message 
+            1
 
 
