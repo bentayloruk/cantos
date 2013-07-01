@@ -4,7 +4,7 @@ open System
 open System.Text.RegularExpressions
 open System.IO
 
-type Line = {
+type SnippetLine = {
     SourceLineNum:int
     SnippetLineNum:int
     Text:string
@@ -13,16 +13,16 @@ type Line = {
 type Snippet = {
     Id:string
     File:string
-    Lines:Line list
+    Lines:SnippetLine list
     }
 
-let (|SnippetOpenLine|_|) (tag:string) (line:string) = 
+let private (|SnippetOpenLine|_|) (tag:string) (line:string) = 
     if Regex.IsMatch(line, "^(\s*)//(\s*)(?i)" + tag + "(\s*):") then
         let id = line.Substring(line.IndexOf(':')+1).Trim()
         Some(id)
     else None
 
-let (|SnippetCloseLine|) (tag:string) (line:string) = 
+let private (|SnippetCloseLine|) (tag:string) (line:string) = 
     Regex.IsMatch(line, "^(\s*)//(\s*)(?i)END" + tag + "(\s*)")
 
 type SnippetParserArgs = {
@@ -33,7 +33,7 @@ type SnippetParserArgs = {
     DirectoryExceptionHandler:exn -> string -> unit
     }
 
-let snippets args file =
+let private snippets args file =
     File.ReadLines(file)
     |> Seq.fold (fun (lineNum, snippet, snippets) line ->
         let lineNum = lineNum + 1
@@ -43,6 +43,7 @@ let snippets args file =
         | None -> 
             match line with
             | SnippetOpenLine args.SnippetTag snippetId ->
+                //Found open line, so fire up new snippet.
                 let snippet = {
                     Snippet.Id = snippetId 
                     File = file
@@ -53,7 +54,8 @@ let snippets args file =
 
         | Some(snippet) ->
             match line with
-            | SnippetOpenLine args.SnippetTag id -> failwith "Encountered a snippet start line before the previous snippet closed." 
+            | SnippetOpenLine args.SnippetTag id ->
+                failwith (sprintf "Encountered a %s open line before the previous %s closed.  Details:\n%i:%s" args.SnippetTag args.SnippetTag lineNum file)
             | SnippetCloseLine args.SnippetTag true ->
                 let snippet = {snippet with Lines = List.rev snippet.Lines }
                 (lineNum, None, snippet :: snippets)
@@ -70,7 +72,7 @@ let snippets args file =
     |> List.ofSeq
     |> List.rev//Does not really matter as we reference them by Id, but why not.
 
-let parsesnippets specifiedDirectories (args:SnippetParserArgs) =
+let private parsesnippets specifiedDirectories (args:SnippetParserArgs) =
     seq {
         for specifiedDir in specifiedDirectories do
             for search in args.FileNamePatterns do
@@ -82,18 +84,14 @@ let parsesnippets specifiedDirectories (args:SnippetParserArgs) =
         }
         |> Seq.concat
 
-let printSnippets path snippetTag =
+let search tag searchPatterns path =
     let args = {
-        SnippetTag = snippetTag 
-        FileNamePatterns = ["*.cs"]
+        SnippetTag = tag 
+        FileNamePatterns = searchPatterns
         FileExceptionHandler = fun _ _ -> ()
         LineExceptionHandler = fun _ _ -> ()
         DirectoryExceptionHandler = fun _ _ -> ()
     }
-    for snippet in parsesnippets [path] args do
-        printfn "%s: %s" snippetTag snippet.Id
-        printfn "%s" snippet.File
-        for line in snippet.Lines do
-            printfn "%i: %s" line.SourceLineNum line.Text
+    parsesnippets [path] args
 
-let printSamples path = printSnippets path "SAMPLE"
+let searchForSamples searchPatterns path = search "SAMPLE" searchPatterns path
