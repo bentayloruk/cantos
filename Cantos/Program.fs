@@ -3,6 +3,7 @@
 open System
 open System.IO
 open UnionArgParser
+open Snippets
 
 module Program =
 
@@ -11,6 +12,7 @@ module Program =
         | [<Mandatory>] InputPath of string
         | OutputPath of string
         | WebServerPort of int
+        | SamplesPath of string//TODO can we make this a list?
     with
         interface IArgParserTemplate with
             member __.Usage = 
@@ -18,6 +20,7 @@ module Program =
                 | InputPath _ -> "specify a site input path"
                 | OutputPath _ -> "specify a site output path"
                 | WebServerPort _ -> "specify the web server preview port"
+                | SamplesPath _ -> "specify a path to files to scan for samples" 
 
     //Site options.
     type SiteOptions = {
@@ -60,7 +63,7 @@ module Program =
         let site = {
             InPath = Uri(options.SourcePath)
             OutPath = Uri(options.DestinationPath)
-            Meta = [ "site", siteMeta ] |> Map.ofList
+            Meta = [ "site", siteMeta; ] |> Map.ofList
             RegisterTemplateType = initSafeType
             }
         
@@ -116,16 +119,28 @@ module Program =
         FireflyServer.runPreviewServer site.DestinationPath site.PreviewServerPort
         logInfo ("Hosting site at http://localhost:" + site.PreviewServerPort.ToString())
 
-    let parseSiteOptions argv = 
-        //This will throw if args are wrong.
-        let argParser = UnionArgParser<CantosArg>()
-        argParser.Parse argv |> argsToOptions
+    //Searches for and writes SAMPLE snippets into the _includes dir.
+    let writeSampleIncludes (argResults:ArgParseResults<CantosArg>) =
+        let samplesPath = argResults.TryGetResult(<@ SamplesPath @>)
+        let siteInputPath = argResults.GetResult(<@ InputPath @>)
+        match (samplesPath, siteInputPath) with
+        | (None,_) -> logInfo "No samples specified."; ()
+        | (Some(samplesPath), inputPath) ->
+            let writeSnippet snippet = 
+                let path = Path.combine [| inputPath; "_includes"; snippet.Id |]
+                let lines =
+                    snippet.Lines
+                    |> Seq.map (fun line -> line.Text.Substring(snippet.LeadingSpaces))
+                File.WriteAllLines(path, lines)
+            Snippets.searchForSamples ["*.cs"; "*.fs"; "*.js"; ] samplesPath //TODO add file filters to command line.
+            |> Seq.iter writeSnippet
 
     [<EntryPoint>]
     let main argv = 
         try
-            let siteOptions = parseSiteOptions argv
-
+            let argResults = UnionArgParser<CantosArg>().Parse argv
+            writeSampleIncludes argResults
+            let siteOptions = argsToOptions argResults
             buildSite siteOptions
             buildOnChange siteOptions
             previewSite siteOptions

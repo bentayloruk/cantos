@@ -13,7 +13,16 @@ type SnippetLine = {
 type Snippet = {
     Id:string
     File:string
+    LeadingSpaces:int
     Lines:SnippetLine list
+    }
+
+type private SnippetParserArgs = {
+    SnippetTag:string
+    FileNamePatterns:string list
+    FileExceptionHandler:exn -> string -> unit
+    LineExceptionHandler:exn -> string -> unit
+    DirectoryExceptionHandler:exn -> string -> unit
     }
 
 let private (|SnippetOpenLine|_|) (tag:string) (line:string) = 
@@ -24,14 +33,6 @@ let private (|SnippetOpenLine|_|) (tag:string) (line:string) =
 
 let private (|SnippetCloseLine|) (tag:string) (line:string) = 
     Regex.IsMatch(line, "^(\s*)//(\s*)(?i)END" + tag + "(\s*)")
-
-type SnippetParserArgs = {
-    SnippetTag:string
-    FileNamePatterns:string list
-    FileExceptionHandler:exn -> string -> unit
-    LineExceptionHandler:exn -> string -> unit
-    DirectoryExceptionHandler:exn -> string -> unit
-    }
 
 let private snippets args file =
     File.ReadLines(file)
@@ -48,17 +49,30 @@ let private snippets args file =
                     Snippet.Id = snippetId 
                     File = file
                     Lines = []
+                    LeadingSpaces = 0 
                     }
                 (lineNum, Some(snippet), snippets)
             | _ -> (lineNum, None, snippets)
 
         | Some(snippet) ->
             match line with
+
             | SnippetOpenLine args.SnippetTag id ->
                 failwith (sprintf "Encountered a %s open line before the previous %s closed.  Details:\n%i:%s" args.SnippetTag args.SnippetTag lineNum file)
+
             | SnippetCloseLine args.SnippetTag true ->
-                let snippet = {snippet with Lines = List.rev snippet.Lines }
+                //Now we have all lines, calc any leading spaces so we can use to format later.
+                let leadingSpaces =
+                    snippet.Lines
+                    |> Seq.choose (fun line ->
+                        match line.Text.Trim() with
+                        | "" -> None//All spaces so discard.
+                        | x -> Some(line.Text.IndexOf(x.[0]))
+                        )
+                    |> Seq.min
+                let snippet = { snippet with Lines = List.rev snippet.Lines; LeadingSpaces = leadingSpaces; }
                 (lineNum, None, snippet :: snippets)
+
             | _ ->
                 let line = {
                     SourceLineNum = lineNum

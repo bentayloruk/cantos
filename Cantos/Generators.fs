@@ -208,10 +208,12 @@ module BookGenerator =
             [typeof<Toc>; typeof<Chapter>; typeof<Heading>;]
             |> Seq.iter site.RegisterTemplateType
 
-            let bookDirs =
-                Dir.getDirs path.LocalPathUnescaped
-                |> Array.filter (fun path -> DirectoryInfo(path).Name.StartsWith("_") <> true)
-            seq { for path in bookDirs do yield! toBookOutputs path site } 
+            seq {
+                let bookDirs =
+                    Dir.getDirs path.LocalPathUnescaped
+                    |> Array.filter (fun path -> DirectoryInfo(path).Name.StartsWith("_") <> true)
+                for path in bookDirs do yield! toBookOutputs path site
+                } 
         else
             logInfo(sprintf "Books directory not found.  Skipping.  Looked in: %s" path.AbsolutePath)
             Seq.empty
