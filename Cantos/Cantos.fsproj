@@ -57,6 +57,8 @@
     <Compile Include="Uri.fs" />
     <Compile Include="Cantos.fs" />
     <Compile Include="Meta.fs" />
+    <Compile Include="Snippets.fs" />
+    <Compile Include="Nudoc.fs" />
     <Compile Include="FrontMatter.fs" />
     <Compile Include="Content.fs" />
     <Compile Include="Pandoc.fs" />
@@ -67,6 +69,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="ClariusLabs.NuDoc">
+      <HintPath>..\packages\NuDoc.0.4.1306.1409\lib\net35\ClariusLabs.NuDoc.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="DotLiquid">
       <HintPath>..\packages\DotLiquid.1.7.0\lib\NET40\DotLiquid.dll</HintPath>
     </Reference>
@@ -109,6 +115,7 @@
       <HintPath>..\packages\FSharp.Reactive.2.0.121121\lib\net40\System.Reactive.Linq.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="System.Xml" />
     <Reference Include="UnionArgParser">
       <HintPath>..\packages\UnionArgParser.0.5.2\lib\net45\UnionArgParser.dll</HintPath>
       <Private>True</Private>

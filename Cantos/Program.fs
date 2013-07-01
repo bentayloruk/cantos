@@ -125,6 +125,7 @@ module Program =
     let main argv = 
         try
             let siteOptions = parseSiteOptions argv
+
             buildSite siteOptions
             buildOnChange siteOptions
             previewSite siteOptions
