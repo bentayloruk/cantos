@@ -151,6 +151,7 @@ module Program =
         with
         | ex ->
             logError ex.Message 
+            logError ex.StackTrace
             1
 
 
