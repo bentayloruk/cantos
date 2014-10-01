@@ -129,8 +129,10 @@ module Program =
             let writeSnippet snippet = 
                 let path = Path.combine [| inputPath; "_includes"; snippet.Id |]
                 let lines =
-                    snippet.Lines
-                    |> Seq.map (fun line -> line.Text.Substring(snippet.LeadingSpaces))
+                    seq { for line in snippet.Lines do
+                            if line.Text.Length <= snippet.LeadingSpaces then yield ""
+                            else yield line.Text.Substring(snippet.LeadingSpaces)
+                    }
                 File.WriteAllLines(path, lines)
             Snippets.searchForSamples ["*.cs"; "*.fs"; "*.js"; ] samplesPath //TODO add file filters to command line.
             |> Seq.iter writeSnippet
