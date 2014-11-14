@@ -7,6 +7,9 @@ Use Cantos to:
 * Generate a blog which you can host on [Github Pages](http://pages.github.com/) or [Site44](http://www.site44.com/).
 * Generate a website (with a blog) and some [books](https://github.com/bentayloruk/cantos/wiki/Books) with table of contents ([like this one](http://www.enticify.com/docs/commerce-server/developer/introduction/overview.html)).
 
+## What is the status of the Cantos project?
+
+
 ## Pandoc Integrated
 
 Cantos will use Pandoc if you have it installed (and MarkdownDeep if not).  Mainly because Pandoc is awesome.  [And this](http://stackoverflow.com/questions/13883627/is-it-possible-to-make-markdowndeep-or-markdownsharp-handle-mixed-html-markdown).
