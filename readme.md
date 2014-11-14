@@ -9,6 +9,7 @@ Use Cantos to:
 
 ## What is the status of the Cantos project?
 
+Cantos was written in 2012 as a "real-world" F# learning tool and to help me generate the [Entcify website](http://www.enticify.com/).  I still use Cantos for this purpose, but am not actively developing it because it meets my current needs.  Cantos could be simplified and the F# code improved considerably, but I don't have plans to do it at this time (even though I want to!).  I'm keeping the project public regardless and may change my mind if anyone else develops an interest or my requirements change. - [@bentayloruk](http://www.twitter.com/bentayloruk).
 
 ## Pandoc Integrated
 
