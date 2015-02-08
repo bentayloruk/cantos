@@ -130,7 +130,10 @@ module Program =
                 let path = Path.combine [| inputPath; "_includes"; snippet.Id |]
                 let lines =
                     snippet.Lines
-                    |> Seq.map (fun line -> line.Text.Substring(snippet.LeadingSpaces))
+                    |> Seq.map (fun line ->
+                        if line.Text.Length = 0 then line.Text
+                        else line.Text.Substring(snippet.LeadingSpaces)
+                        )
                 File.WriteAllLines(path, lines)
             Snippets.searchForSamples ["*.cs"; "*.fs"; "*.js"; ] samplesPath //TODO add file filters to command line.
             |> Seq.iter writeSnippet
@@ -149,6 +152,7 @@ module Program =
         with
         | ex ->
             logError ex.Message 
+            logError ex.StackTrace 
             1
 
 
