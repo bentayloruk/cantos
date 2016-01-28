@@ -62,7 +62,7 @@ let runPreviewServer path (port:int) =
             let response = Response(resultDelegate, "404", ContentType = "")
             response.Write("Not found") |> ignore
             response.End()
-        | (resCode, _,_,_) -> failwith "Unhandled response code %i." resCode
+        | (resCode, _,_,_) -> failwithf "Unhandled response code %i." resCode
 
 
         ()
